@@ -1,0 +1,2715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIBE Member Engagement Demo — by CORE AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1a2b6b; --periwinkle: #6b7fd4; --light: #f0f2fa;
+      --border: #e5e7f5; --white: #ffffff; --dark: #111827;
+      --gray: #6b7280; --gold: #f59e0b; --green: #10b981; --red: #ef4444;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--light); color: var(--dark); }
+
+    /* LOADING */
+    .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #000; flex-direction: column; gap: 16px; }
+    .loading-screen img { height: 56px; }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: #a5b0e8; font-size: 14px; font-weight: 500; }
+
+    /* GATE */
+    .gate { display: block; min-height: 100vh; background: #000; }
+    .gate-hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+    .gate-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+    .gate-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.70) 100%); z-index: 1; }
+    .gate-hero-content { position: relative; z-index: 2; padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .gate-hero-logo { height: 56px; margin-bottom: 8px; }
+    .gate-hero-divider { width: 48px; height: 3px; background: var(--gold); border-radius: 2px; margin: 4px auto; }
+    .gate-hero-title { font-size: clamp(26px, 5vw, 52px); font-weight: 800; color: #fff; line-height: 1.1; letter-spacing: -0.5px; max-width: 680px; }
+    .gate-hero-sub { font-size: clamp(14px, 2vw, 20px); font-weight: 500; color: #a5b0e8; letter-spacing: 0.5px; }
+    .gate-hero-btn { margin-top: 8px; padding: 14px 36px; border-radius: 10px; background: var(--gold); color: #111; font-size: 15px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; transition: opacity .15s, transform .15s; }
+    .gate-hero-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .gate-scroll-hint { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 2; color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 6px; animation: bounce 2s infinite; }
+    @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(6px)} }
+    .gate-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #111111; padding: 60px 24px; }
+    .gate-box { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 44px 40px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+    .gate-box-logo { height: 44px; margin-bottom: 20px; }
+    .gate-box h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .gate-box p { font-size: 14px; color: #6b7faa; margin-bottom: 28px; }
+    .gate-input { width: 100%; padding: 13px 16px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); font-size: 15px; outline: none; font-family: inherit; margin-bottom: 12px; text-align: center; letter-spacing: 3px; color: #fff; transition: border-color .15s; }
+    .gate-input:focus { border-color: var(--periwinkle); }
+    .gate-input::placeholder { letter-spacing: 1px; color: #555; }
+    .gate-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: var(--navy); color: var(--white); font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .gate-btn:hover { background: #2d3e8f; }
+    .gate-error { color: #f87171; font-size: 13px; margin-top: 8px; display: none; }
+    .gate-note { font-size: 12px; color: #555; margin-top: 16px; }
+
+    /* HEADER */
+    .header { background: linear-gradient(135deg, var(--navy), #2d3e8f); padding: 14px 20px; }
+    .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .header-left { min-width: 0; flex: 1 1 auto; }
+    .header-left h1 { font-size: clamp(14px, 3.5vw, 20px); font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-left p { font-size: 12px; color: #a5b0e8; margin-top: 3px; }
+    @media (max-width: 480px) {
+      .header-left .chamber-sep { display: none; }
+      .header-left .chamber-sub { display: block; margin-top: 2px; }
+    }
+    .header-right { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-outline { padding: 8px 14px; border-radius: 8px; border: 1.5px solid #a5b0e8; background: transparent; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-gold { padding: 8px 16px; border-radius: 8px; border: none; background: var(--gold); color: #111; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+    /* TABS */
+    .tabs { background: var(--white); border-bottom: 1.5px solid var(--border); }
+    .tabs-inner { max-width: 1200px; margin: 0 auto; display: flex; padding: 0 28px; overflow-x: auto; }
+    .tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: var(--gray); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all .15s; white-space: nowrap; }
+    .tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+    /* STATS */
+    .stats-row { max-width: 1200px; margin: 20px auto 0; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .stat-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px 20px; }
+    .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray); margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 900; color: var(--navy); }
+    .stat-sub { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+    /* FILTERS */
+    .filters { max-width: 1200px; margin: 16px auto 0; padding: 0 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter-input { flex: 1; min-width: 200px; padding: 9px 14px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; outline: none; font-family: inherit; background: var(--white); }
+    .filter-select { padding: 9px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; outline: none; background: var(--white); color: var(--dark); font-family: inherit; }
+
+    /* SORT */
+    .sort-controls { max-width: 1200px; margin: 8px auto 0; padding: 0 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sort-label { font-size: 12px; font-weight: 600; color: var(--gray); }
+    .sort-btn { padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; color: var(--gray); cursor: pointer; font-family: inherit; transition: all .15s; }
+    .sort-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    /* ALERTS */
+    .alerts { max-width: 1200px; margin: 16px auto 0; padding: 0 20px; }
+    .alert-card { background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .alert-card.warning { background: #fffbeb; border-color: #fcd34d; }
+    .alert-text { font-size: 13px; font-weight: 600; color: #991b1b; }
+    .alert-card.warning .alert-text { color: #92400e; }
+
+    /* TABLE */
+    .table-wrap { max-width: 1200px; margin: 16px auto 24px; padding: 0 20px; }
+    .table { background: var(--white); border-radius: 14px; border: 1.5px solid var(--border); overflow: hidden; }
+    .table-header { display: grid; grid-template-columns: 2fr 1.5fr 1.2fr 1fr 1fr 1fr 0.8fr; padding: 10px 18px; background: var(--light); border-bottom: 1.5px solid var(--border); font-size: 11px; font-weight: 700; color: var(--gray); letter-spacing: 0.5px; text-transform: uppercase; }
+    .table-header.member-view { grid-template-columns: 2.5fr 2fr 1.5fr 1.5fr 0.8fr; }
+    .table-row { display: grid; grid-template-columns: 2fr 1.5fr 1.2fr 1fr 1fr 1fr 0.8fr; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; align-items: center; transition: background .1s; }
+    .table-row.member-view { grid-template-columns: 2.5fr 2fr 1.5fr 1.5fr 0.8fr; }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: #f8f9fc; }
+    .biz-name { font-weight: 700; font-size: 14px; color: var(--dark); }
+    .biz-contact { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .seat-badge { display: inline-block; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 600; background: #eef2ff; color: var(--navy); border: 1px solid #c7d2fe; }
+    .renewal-badge { display: inline-block; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+    .renewal-ok { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .renewal-soon { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+    .renewal-urgent { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+    .col-actions { display: flex; gap: 6px; }
+    .action-btn { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 13px; }
+
+    /* MOBILE CARDS */
+    .biz-contact { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .member-card-mobile { display: block; background: var(--white); border-radius: 14px; border: 1.5px solid var(--border); overflow: hidden; max-width: 1160px; margin: 0 auto; }
+    .member-card-item { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 12px; align-items: center; }
+    @media (max-width: 700px) { .member-card-item { display: block; padding: 14px 16px; } }
+    .member-card-item:last-child { border-bottom: none; }
+    .member-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .member-card-name { font-weight: 700; font-size: 15px; color: var(--dark); }
+    .member-card-contact { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .member-card-website { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .member-card-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .member-card-links { display: flex; gap: 10px; margin-top: 8px; }
+    .member-card-links a { font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+    .member-card-phone { color: var(--gray); }
+    .member-card-email { color: var(--periwinkle); }
+
+    /* VISITOR TABLE */
+    .visitor-header { display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr 0.8fr; padding: 10px 18px; background: var(--light); border-bottom: 1.5px solid var(--border); font-size: 11px; font-weight: 700; color: var(--gray); letter-spacing: 0.5px; text-transform: uppercase; }
+    .visitor-row { display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr 0.8fr; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; align-items: center; }
+    .visitor-row:last-child { border-bottom: none; }
+    .sessions-badge { display: inline-block; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+    .sessions-ok { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .sessions-warn { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+    .sessions-max { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+
+    /* ATTENDANCE */
+    .attendance-wrap { max-width: 1200px; margin: 16px auto 24px; padding: 0 20px; }
+    .attendance-header { background: var(--white); border: 1.5px solid var(--border); border-radius: 14px 14px 0 0; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-bottom: 1.5px solid var(--border); }
+    .attendance-header h3 { font-size: 16px; font-weight: 800; color: var(--dark); }
+    .meeting-selector { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .meeting-date-input { padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; outline: none; font-family: inherit; }
+    .btn-navy { padding: 8px 16px; border-radius: 8px; border: none; background: var(--navy); color: var(--white); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .attendance-table { background: var(--white); border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 14px 14px; overflow: hidden; }
+    .att-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; gap: 8px; }
+    .att-row:last-child { border-bottom: none; }
+    .att-name { font-weight: 600; font-size: 14px; color: var(--dark); }
+    .att-biz { font-size: 12px; color: var(--gray); }
+    .att-btns { display: flex; gap: 8px; }
+    .att-btn { padding: 6px 16px; border-radius: 20px; border: 1.5px solid var(--border); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; background: var(--white); color: var(--gray); transition: all .15s; }
+    .att-btn.present { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+    .att-btn.absent { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+    .att-section-divider { padding: 8px 20px; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--navy); background: #f0f2fa; border-bottom: 1px solid var(--border); border-top: 1.5px solid var(--border); }
+    .past-meetings { max-width: 1200px; margin: 12px auto 24px; padding: 0 20px; }
+    .past-meeting-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s; }
+    .past-meeting-card:hover { border-color: var(--periwinkle); }
+    .past-meeting-title { font-weight: 700; font-size: 15px; color: var(--dark); margin-bottom: 8px; }
+    .past-meeting-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .past-stat { font-size: 13px; font-weight: 600; }
+    .past-meeting-detail { margin-top: 12px; display: none; }
+    .past-meeting-detail.open { display: block; }
+    .att-detail-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    .att-detail-row:last-child { border-bottom: none; }
+
+    /* ANNOUNCEMENTS */
+    .ann-wrap { max-width: 800px; margin: 20px auto 24px; padding: 0 20px; }
+    .ann-compose { background: var(--white); border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    .ann-compose h3 { font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 12px; }
+    .ann-textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; }
+    .ann-meta { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    .ann-type-select { padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 13px; font-family: inherit; background: var(--white); }
+    .ann-post-btn { padding: 8px 20px; border-radius: 8px; border: none; background: var(--navy); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .ann-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; }
+    .ann-card.pinned { border-color: var(--gold); background: #fffbeb; }
+    .ann-card.urgent { border-color: #fca5a5; background: #fef2f2; }
+    .ann-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+    .ann-type-badge { display: inline-block; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+    .ann-badge-announcement { background: #eef2ff; color: var(--navy); border: 1px solid #c7d2fe; }
+    .ann-badge-reminder { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+    .ann-badge-urgent { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+    .ann-badge-pinned { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+    .ann-date { font-size: 12px; color: var(--gray); }
+    .ann-author { font-size: 12px; color: var(--periwinkle); font-weight: 600; }
+    .ann-body { font-size: 14px; color: var(--dark); line-height: 1.6; }
+    .ann-delete { background: none; border: none; color: #ccc; cursor: pointer; font-size: 16px; padding: 0 4px; }
+    .ann-delete:hover { color: var(--red); }
+    .ann-empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+    .coming-soon-banner { background: linear-gradient(135deg, var(--navy), #2d3e8f); border-radius: 14px; padding: 24px; margin-bottom: 20px; color: #fff; }
+    .coming-soon-banner h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .coming-soon-banner p { font-size: 13px; color: #a5b0e8; }
+    .coming-soon-badge { display: inline-block; background: var(--gold); color: #111; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 700; margin-top: 10px; margin-right: 6px; }
+
+    /* EVENTS */
+    .events-wrap { max-width: 800px; margin: 20px auto 24px; padding: 0 20px; }
+    .event-submit-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; border: none; background: var(--navy); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 20px; }
+    .events-section-title { font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--navy); margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1.5px solid var(--border); }
+    .event-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 14px; transition: border-color .15s; }
+    .event-card:hover { border-color: var(--periwinkle); }
+    .event-card.pending { border-color: #fcd34d; background: #fffbeb; }
+    .event-card.past { opacity: 0.55; }
+    .event-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .event-card-title { font-size: 16px; font-weight: 700; color: var(--dark); }
+    .event-card-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .event-meta-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--gray); }
+    .event-meta-item a { color: var(--periwinkle); text-decoration: none; }
+    .event-card-desc { font-size: 14px; color: var(--dark); line-height: 1.6; margin-bottom: 12px; }
+    .event-card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .event-posted-by { font-size: 12px; color: var(--gray); }
+    .event-rsvp-btn { padding: 7px 16px; border-radius: 8px; border: none; background: var(--green); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-block; }
+    .event-admin-btns { display: flex; gap: 8px; }
+    .event-approve-btn { padding: 6px 14px; border-radius: 8px; border: none; background: var(--green); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .event-deny-btn, .event-delete-btn { padding: 6px 14px; border-radius: 8px; border: 1.5px solid #fca5a5; background: #fef2f2; color: var(--red); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .event-pending-badge { background: #fcd34d; color: #92400e; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+    .event-past-badge { background: #f3f4f6; color: #6b7280; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+    .event-empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+
+    .biz-name-link { cursor: pointer; text-decoration: none; color: inherit; }
+    .biz-name-link:hover { text-decoration: underline; color: var(--periwinkle); }
+    .profile-view-header { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; }
+    .profile-view-logo { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; border: 1.5px solid var(--border); flex-shrink: 0; }
+    .profile-view-name { font-size: 19px; font-weight: 800; color: var(--dark); }
+    .profile-view-cats { margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .profile-view-featured { width: 100%; border-radius: 12px; margin-bottom: 14px; max-height: 200px; object-fit: cover; }
+    .profile-view-section { margin-bottom: 14px; }
+    .profile-view-section .section-label { margin: 0 0 8px; }
+    .profile-view-row { font-size: 14px; color: var(--dark); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .profile-view-row a { color: var(--periwinkle); text-decoration: none; }
+    .profile-view-social-row { display: flex; gap: 12px; margin-top: 6px; }
+    .social-icon-link { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; text-decoration: none; }
+
+    /* PROFILE CLAIM / COMPLETION / PENDING UPDATES */
+    .claim-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--periwinkle); background: #eef2ff; color: var(--navy); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
+    .claim-btn:hover { background: #e0e6fb; }
+    .completion-wrap { margin-top: 8px; }
+    .completion-bar-bg { width: 100%; max-width: 160px; height: 6px; border-radius: 4px; background: #e5e7f5; overflow: hidden; margin-top: 3px; }
+    .completion-bar-fill { height: 100%; border-radius: 4px; background: var(--green); transition: width .2s; }
+    .completion-bar-fill.low { background: #dc2626; }
+    .completion-bar-fill.mid { background: #d97706; }
+    .completion-label { font-size: 11px; font-weight: 700; color: var(--gray); }
+    .consent-field { display: flex; align-items: flex-start; gap: 8px; background: var(--light); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 6px; }
+    .consent-field input[type="checkbox"] { width: auto; margin-top: 3px; flex-shrink: 0; }
+    .consent-field label { font-size: 12px; font-weight: 500; color: var(--dark); line-height: 1.5; }
+    .visibility-banner { background: linear-gradient(135deg, var(--navy), #2d3e8f); border-radius: 14px; padding: 18px 20px; color: #fff; margin-bottom: 16px; }
+    .visibility-banner h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+    .visibility-banner p { font-size: 13px; color: #a5b0e8; }
+    .pending-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+    .pending-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .pending-biz-name { font-weight: 700; font-size: 15px; color: var(--dark); }
+    .pending-date { font-size: 12px; color: var(--gray); }
+    .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+    .diff-col-header { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 8px 12px; background: var(--light); color: var(--gray); }
+    .diff-row { display: contents; }
+    .diff-cell { padding: 8px 12px; font-size: 13px; border-top: 1px solid #f0f0f0; word-break: break-word; }
+    .diff-field-label { font-size: 11px; font-weight: 700; color: var(--periwinkle); display: block; margin-bottom: 2px; }
+    .diff-cell.changed { background: #fffbeb; }
+    .pending-admin-btns { display: flex; gap: 8px; }
+    .pending-empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+
+    /* MODAL */
+    .overlay, .event-modal-overlay { display: none; position: fixed; inset: 0; background: #00000066; z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .overlay.open, .event-modal-overlay.open { display: flex; }
+    .modal, .event-modal { background: var(--white); border-radius: 16px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px #0003; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { font-size: 18px; font-weight: 700; color: var(--dark); }
+    .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; }
+    .field { margin-bottom: 14px; }
+    .field label { font-size: 12px; font-weight: 600; color: #555; display: block; margin-bottom: 4px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; outline: none; font-family: inherit; background: var(--white); color: var(--dark); }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .field-row { display: flex; gap: 10px; }
+    .field-row .field { flex: 1; }
+    .section-label { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--navy); margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--border); }
+    .modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+    .modal-btns .cancel { flex: 1; padding: 10px 0; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); cursor: pointer; font-weight: 600; color: #555; font-family: inherit; }
+    .modal-btns .save { flex: 2; padding: 10px 0; border-radius: 8px; border: none; background: var(--navy); color: var(--white); cursor: pointer; font-weight: 700; font-family: inherit; font-size: 14px; }
+    .modal-btns .del { padding: 10px 14px; border-radius: 8px; border: 1.5px solid #fca5a5; background: #fef2f2; cursor: pointer; color: var(--red); font-weight: 600; font-family: inherit; }
+
+    .toast { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 999; white-space: nowrap; box-shadow: 0 4px 20px #0004; }
+    .footer { background: #111111; padding: 24px 28px; text-align: center; }
+    .footer p { color: #a5b0e8; font-size: 13px; }
+    .footer strong { color: #fff; }
+    .empty { padding: 40px; text-align: center; color: #aaa; }
+
+    /* CHECK-IN */
+    .checkin-page { min-height: 100vh; background: linear-gradient(135deg, var(--navy), #2d3e8f); padding: 24px 16px; }
+    .checkin-header { text-align: center; margin-bottom: 28px; }
+    .checkin-header h1 { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+    .checkin-header p { font-size: 14px; color: #a5b0e8; }
+    .checkin-date { display: inline-block; background: #ffffff22; color: #fff; border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 700; margin-top: 8px; }
+    .checkin-grid { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+    .checkin-card { background: var(--white); border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; border: 2.5px solid transparent; transition: all .15s; box-shadow: 0 2px 8px #0002; }
+    .checkin-card:hover { border-color: var(--periwinkle); transform: translateY(-1px); }
+    .checkin-card.checked-in { background: #ecfdf5; border-color: #10b981; }
+    .checkin-card.checked-in .checkin-name { color: #059669; }
+    .checkin-name { font-size: 16px; font-weight: 700; color: var(--dark); }
+    .checkin-biz { font-size: 13px; color: var(--gray); margin-top: 2px; }
+    .checkin-status { width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; transition: all .15s; }
+    .checkin-card.checked-in .checkin-status { background: #10b981; border-color: #10b981; color: #fff; }
+    .checkin-confirm { position: fixed; inset: 0; background: #00000088; display: none; align-items: center; justify-content: center; z-index: 200; }
+    .checkin-confirm.show { display: flex; }
+    .checkin-confirm-box { background: #fff; border-radius: 20px; padding: 32px 28px; text-align: center; max-width: 320px; width: 100%; box-shadow: 0 20px 60px #0004; }
+    .checkin-confirm-box .big-check { font-size: 56px; margin-bottom: 12px; }
+    .checkin-confirm-box h2 { font-size: 20px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+    .checkin-confirm-box p { font-size: 14px; color: var(--gray); margin-bottom: 20px; }
+    .checkin-confirm-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--navy); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+    .table { display: none; }
+    .table-header { display: none; }
+    .member-card-mobile { display: block; }
+    #view-visitors .table { display: block; }
+    @media (max-width: 700px) {
+      .member-card-mobile { display: block; }
+    }
+    @media (max-width: 900px) {
+      .visitor-header > *:nth-child(3), .visitor-header > *:nth-child(4), .visitor-row > *:nth-child(3), .visitor-row > *:nth-child(4) { display: none; }
+    }
+    /* ── VIBE DEMO CHROME ─────────────────────────────────── */
+    .vibe-mark { font-weight: 900; letter-spacing: 6px; color: #fff; font-size: 26px; }
+    .vibe-mark span { color: var(--gold); letter-spacing: 0; font-size: 11px; font-weight: 700; display: block; letter-spacing: 2px; margin-top: 2px; }
+    .demo-pill { display: inline-block; background: var(--gold); color: #111; font-size: 10px; font-weight: 900; letter-spacing: 1px; padding: 2px 8px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
+    .demo-bar { background: #111827; color: #fbbf24; text-align: center; font-size: 12px; font-weight: 600; padding: 6px 16px; }
+    .demo-bar button { background: transparent; border: 1px solid #4b5563; color: #e5e7eb; border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 700; margin-left: 10px; cursor: pointer; font-family: inherit; }
+    .demo-bar button:hover { border-color: var(--gold); color: var(--gold); }
+    .gate-codes { margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; font-size: 12px; color: #8b96c4; line-height: 1.9; }
+    .gate-codes code { background: rgba(255,255,255,0.08); border-radius: 5px; padding: 2px 8px; color: var(--gold); font-weight: 700; letter-spacing: 1px; }
+
+    /* ── NETWORKING TAGS ──────────────────────────────────── */
+    .tag-row { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+    .tag-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .tag-group-label { font-size: 10px; font-weight: 800; text-transform: none; color: var(--gray); margin-right: 2px; }
+    .tag-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+    .tag-partner { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; }
+    .tag-referral { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .tag-neutral { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; margin: 2px 3px 0 0; }
+    .tag-more { font-size: 10px; color: var(--gray); font-weight: 700; }
+    .role-badge { display: inline-block; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+
+    /* ── CHIP SELECTOR ────────────────────────────────────── */
+    .chip-box { border: 1.5px solid var(--border); border-radius: 10px; padding: 8px; background: #fff; position: relative; }
+    .chip-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+    .chip-selected { display: inline-flex; align-items: center; gap: 5px; background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 20px; padding: 3px 6px 3px 10px; font-size: 12px; font-weight: 600; }
+    .chip-x { border: none; background: transparent; color: #6366f1; cursor: pointer; font-size: 11px; line-height: 1; padding: 0 2px; }
+    .chip-empty { font-size: 12px; color: #9ca3af; }
+    .chip-input { width: 100%; border: none; outline: none; font-family: inherit; font-size: 14px; padding: 4px 2px; background: transparent; }
+    .chip-suggest { position: absolute; left: 0; right: 0; top: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; margin-top: 4px; z-index: 40; overflow: hidden; box-shadow: 0 12px 28px rgba(17,24,39,0.12); }
+    .chip-suggest:empty { display: none; }
+    .chip-suggest-item { padding: 9px 12px; font-size: 13px; cursor: pointer; }
+    .chip-suggest-item:hover { background: var(--light); }
+    .chip-suggest-new { color: var(--navy); font-weight: 700; border-top: 1px solid var(--border); }
+    .field-hint { display: block; font-size: 11px; font-weight: 500; color: var(--gray); margin-top: 2px; }
+    .future-field input { background: #f9fafb; color: #9ca3af; }
+    .future-note { font-size: 11px; color: #9ca3af; margin: -6px 0 14px; }
+
+    /* ── ANALYTICS ────────────────────────────────────────── */
+    .analytics-wrap { max-width: 1200px; margin: 20px auto; padding: 0 20px 40px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .kpi-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+    .kpi-label { font-size: 12px; font-weight: 700; color: var(--gray); }
+    .kpi-value { font-size: 30px; font-weight: 900; color: var(--navy); margin: 2px 0 12px; display: flex; align-items: baseline; gap: 8px; }
+    .kpi-trend { font-size: 12px; font-weight: 800; }
+    .kpi-trend.up { color: #059669; } .kpi-trend.down { color: #dc2626; } .kpi-trend.flat { color: #9ca3af; }
+    .kpi-bars { display: flex; align-items: flex-end; gap: 8px; height: 66px; }
+    .kpi-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
+    .kpi-bar-wrap span { font-size: 10px; color: #9ca3af; font-weight: 600; }
+    .kpi-bar { width: 100%; background: #c7d2fe; border-radius: 4px 4px 0 0; }
+    .kpi-bar.now { background: var(--navy); }
+    .kpi-sub { font-size: 11px; color: var(--gray); margin-top: 8px; line-height: 1.4; }
+    .analytics-note { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 14px 16px; margin-top: 16px; font-size: 13px; color: #92400e; line-height: 1.5; }
+
+    /* ── CONNECTIONS ──────────────────────────────────────── */
+    .conn-wrap { max-width: 900px; margin: 20px auto; padding: 0 20px 40px; }
+    .conn-picker { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; }
+    .conn-picker label { display: block; font-size: 12px; font-weight: 800; color: var(--gray); margin-bottom: 6px; }
+    .conn-picker select { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1.5px solid var(--border); font-family: inherit; font-size: 14px; background: #fff; }
+    .conn-intro { font-size: 13px; color: var(--dark); line-height: 1.6; margin-top: 12px; }
+    .conn-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+    .conn-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .conn-name { font-size: 16px; font-weight: 800; color: var(--navy); }
+    .conn-contact { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .match-badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+    .match-mutual { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .match-strong { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; }
+    .match-possible { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+    .conn-why { margin: 10px 0 0 18px; font-size: 13px; color: var(--dark); line-height: 1.7; }
+    .conn-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .conn-btn { background: var(--navy); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; font-family: inherit; }
+    .conn-btn-ghost { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen" class="loading-screen">
+  <div class="vibe-mark">VIBE<span>BY CORE AI</span></div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading demo directory...</div>
+</div>
+
+<!-- CHECK-IN PAGE -->
+<div id="checkinPage" style="display:none">
+  <div class="checkin-page">
+    <div class="checkin-header">
+      <div style="font-size:40px;margin-bottom:8px">🏢</div>
+      <h1>Riverbend Member Directory</h1>
+      <p id="checkinMeetingTime">Member Gathering</p>
+      <div class="checkin-date" id="checkinDateDisplay"></div>
+    </div>
+    <div class="checkin-grid" id="checkinGrid"></div>
+    <div id="checkinDone" style="display:none;max-width:500px;margin:20px auto 0;background:#ffffff22;border-radius:14px;padding:16px 20px;text-align:center;color:#fff;font-size:14px;font-weight:600;">
+      <span style="font-size:28px;display:block;margin-bottom:6px">✅</span>
+      All members checked in!
+    </div>
+  </div>
+  <div class="checkin-confirm" id="checkinConfirm">
+    <div class="checkin-confirm-box">
+      <div class="big-check">✅</div>
+      <h2 id="confirmName"></h2>
+      <p id="confirmBiz"></p>
+      <p style="color:#059669;font-weight:700;margin-bottom:12px">You're checked in!</p>
+      <a href="https://demo.gocoreai.co" target="_blank" style="display:block;margin-bottom:16px;padding:12px;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:10px;color:#1a2b6b;font-weight:700;font-size:14px;text-decoration:none">🔗 Visit Member Directory</a>
+      <button class="checkin-confirm-btn" onclick="dismissConfirm()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- GATE -->
+<div class="gate" id="gate" style="display:none">
+  <div class="gate-hero">
+    <video class="gate-video" autoplay muted loop playsinline>
+      <source src="https://videos.pexels.com/video-files/11645112/11645112-uhd_2560_1440_24fps.mp4" type="video/mp4" />
+    </video>
+    <div class="gate-overlay"></div>
+    <div class="gate-hero-content">
+      <div class="vibe-mark">VIBE<span>BY CORE AI</span></div>
+      <div class="gate-hero-divider"></div>
+      <h1 class="gate-hero-title">Member Engagement, Built for Local Business Organizations</h1>
+      <p class="gate-hero-sub">Live demo · Riverbend Business Alliance (fictional)</p>
+      <button class="gate-hero-btn" onclick="document.getElementById('loginSection').scrollIntoView({behavior:'smooth'})">Sign In →</button>
+    </div>
+    <div class="gate-scroll-hint"><span>Scroll to sign in</span><span>↓</span></div>
+  </div>
+  <div class="gate-login" id="loginSection">
+    <div class="gate-box">
+      <div class="vibe-mark">VIBE<span>BY CORE AI</span></div>
+      <h2 style="margin-top:18px">Demo Access</h2>
+      <p>Sign in as a member or as an administrator to walk through both sides of the platform.</p>
+      <input class="gate-input" type="password" id="passwordInput" placeholder="Enter access code" onkeydown="if(event.key==='Enter') checkPassword()" />
+      <button class="gate-btn" onclick="checkPassword()">Access Directory</button>
+      <div class="gate-error" id="gateError">Incorrect access code. Please try again.</div>
+      <div class="gate-codes">
+        Member view: <code>vibe2026</code><br>
+        Administrator view: <code>vibeadmin2026</code>
+        <div style="margin-top:10px;color:#6b7280;letter-spacing:0">Every business, person and number in this demo is fictional.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <h1>🏢 Riverbend Member Directory<span class="demo-pill">DEMO</span></h1>
+        <p id="meetingHeader" style="font-size:13px;color:#a5b0e8;margin-top:4px"></p>
+      </div>
+      <div class="header-right">
+        <button class="btn-outline" id="exportBtn" onclick="exportCSV()">⬇️ Export</button>
+        <button class="btn-outline" id="copyEmailsBtn" onclick="copyEmails()">📧 Copy Emails</button>
+        <button class="btn-outline" id="addVisitorBtn" onclick="openVisitorModal()">+ Add Visitor</button>
+        <button class="btn-gold" id="addMemberBtn" onclick="openModal()">+ Add Member</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-bar">
+    VIBE demo environment — fictional members, sample data, no live database.
+    <button onclick="resetDemoData()">↺ Reset demo data</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tabs-inner">
+      <div class="tab active" id="tab-members" onclick="showTab('members')">👥 Members</div>
+      <div class="tab" id="tab-visitors" onclick="showTab('visitors')">🪑 Visitors</div>
+      <div class="tab" id="tab-attendance" onclick="showTab('attendance')">✅ Attendance</div>
+      <div class="tab" id="tab-announcements" onclick="showTab('announcements')">📣 Announcements</div>
+      <div class="tab" id="tab-events" onclick="showTab('events')">🎉 Events <span id="eventsPendingBadge" style="display:none;background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;margin-left:4px">!</span></div>
+      <div class="tab" id="tab-connections" onclick="showTab('connections')">🤝 Connections</div>
+      <div class="tab" id="tab-claims" onclick="showTab('claims')">📋 Pending Updates <span id="claimsPendingBadge" style="display:none;background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800;margin-left:4px">!</span></div>
+      <div class="tab" id="tab-analytics" onclick="showTab('analytics')">📊 Analytics</div>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div id="view-members">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="alerts" id="alertsRow"></div>
+    <div class="filters">
+      <input class="filter-input" id="searchInput" placeholder="Search by business, contact, or industry..." oninput="render()" />
+      <select class="filter-select" id="statusFilter" onchange="render()">
+        <option value="All">All Statuses</option>
+        <option>Active</option>
+        <option>Inactive</option>
+      </select>
+      <select class="filter-select" id="categoryFilter" onchange="render()">
+        <option value="All">All Categories</option>
+      </select>
+      <select class="filter-select" id="roleFilter" onchange="render()">
+        <option value="All">All Networking Roles</option>
+      </select>
+    </div>
+    <div class="sort-controls">
+      <span class="sort-label">Sort by:</span>
+      <button class="sort-btn active" id="sort-biz" onclick="setSort('biz')">Business A–Z</button>
+      <button class="sort-btn" id="sort-renewal" onclick="setSort('renewal')" style="display:none">Renewal Date</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table">
+        <div id="tableHeader"></div>
+        <div id="tableBody"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="member-card-mobile" id="mobileCards"></div>
+    </div>
+  </div>
+
+  <!-- VISITORS -->
+  <div id="view-visitors" style="display:none">
+    <div class="stats-row" id="visitorStatsRow"></div>
+    <div class="filters">
+      <input class="filter-input" id="visitorSearch" placeholder="Search visitors..." oninput="renderVisitors()" />
+      <select class="filter-select" id="visitorStatusFilter" onchange="renderVisitors()">
+        <option value="All">All Visitors</option>
+        <option>Sessions Remaining</option>
+        <option>Limit Reached</option>
+        <option>Joined Riverbend</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <div class="table">
+        <div class="visitor-header">
+          <div>Name / Business</div><div>Contact</div><div>First Visit</div>
+          <div>Last Visit</div><div>Sessions Used</div><div>Status</div><div>Actions</div>
+        </div>
+        <div id="visitorBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div id="view-attendance" style="display:none">
+    <div class="attendance-wrap">
+      <div class="attendance-header">
+        <div>
+          <h3>📋 Meeting Attendance</h3>
+          <p style="font-size:13px;color:var(--gray);margin-top:4px" id="attendanceSubtitle">Mark attendance for each Riverbend meeting</p>
+        </div>
+        <div class="meeting-selector">
+          <input type="date" class="meeting-date-input" id="meetingDate" />
+          <button class="btn-navy" onclick="loadAttendance()">Load Meeting</button>
+          <button class="btn-gold" id="saveAttBtn" onclick="saveAttendance()">Save Attendance</button>
+        </div>
+      </div>
+      <div class="attendance-table" id="attendanceTable"></div>
+    </div>
+    <div class="past-meetings">
+      <h3 style="font-size:16px;font-weight:800;color:var(--dark);margin-bottom:12px">Past Meetings</h3>
+      <div id="pastMeetingsWrap"></div>
+    </div>
+  </div>
+
+  <!-- ANNOUNCEMENTS -->
+  <div id="view-announcements" style="display:none">
+    <div class="ann-wrap">
+      <div class="coming-soon-banner">
+        <h3>📣 Announcements & Group Messaging</h3>
+        <p>Post announcements for Riverbend members below. Coming soon: members and visitors will receive text messages and emails directly on their phones.</p>
+        <div style="margin-top:10px">
+          <span class="coming-soon-badge">📱 SMS Blast — Coming Soon</span>
+          <span class="coming-soon-badge">📧 Email Blast — Coming Soon</span>
+          <span class="coming-soon-badge">⏰ Automated Reminders — Coming Soon</span>
+        </div>
+      </div>
+      <div class="ann-compose" id="annCompose" style="display:none">
+        <h3>📝 Post an Announcement</h3>
+        <textarea class="ann-textarea" id="annText" placeholder="Type your announcement here..."></textarea>
+        <div class="ann-meta">
+          <select class="ann-type-select" id="annType">
+            <option value="announcement">📢 Announcement</option>
+            <option value="reminder">⏰ Reminder</option>
+            <option value="urgent">🚨 Urgent</option>
+            <option value="pinned">📌 Pinned</option>
+          </select>
+          <button class="ann-post-btn" onclick="postAnnouncement()">Post to Group</button>
+        </div>
+      </div>
+      <div id="annFeed"></div>
+    </div>
+  </div>
+
+  <!-- EVENTS -->
+  <div id="view-events" style="display:none">
+    <div class="events-wrap">
+      <button class="event-submit-btn" id="submitEventBtn" onclick="openEventModal()">🎉 Submit an Event</button>
+      <div id="pendingEventsSection" style="display:none">
+        <div class="events-section-title">⏳ Pending Approval</div>
+        <div id="pendingEventsFeed"></div>
+      </div>
+      <div class="events-section-title">📅 Upcoming Events</div>
+      <div id="upcomingEventsFeed"></div>
+      <div class="events-section-title" id="pastEventsTitle" style="display:none">🗓️ Past Events</div>
+      <div id="pastEventsFeed"></div>
+    </div>
+  </div>
+
+  <!-- PENDING PROFILE UPDATES (admin only) -->
+  <div id="view-claims" style="display:none">
+    <div class="events-wrap">
+      <div class="events-section-title">📋 Pending Profile Updates</div>
+      <div id="pendingUpdatesFeed"></div>
+    </div>
+  </div>
+
+  <!-- CONNECTIONS -->
+  <div id="view-connections" style="display:none">
+    <div class="conn-wrap">
+      <div class="conn-picker">
+        <label for="connMember">Show suggested connections for</label>
+        <select id="connMember" onchange="renderConnections()"></select>
+        <div class="conn-intro" id="connIntro"></div>
+      </div>
+      <div id="connFeed"></div>
+    </div>
+  </div>
+
+  <!-- PLATFORM ANALYTICS (admin only) -->
+  <div id="view-analytics" style="display:none">
+    <div class="analytics-wrap">
+      <div class="events-section-title">📊 Platform Analytics</div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div id="analyticsNotes"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div style="text-align:center;margin-bottom:12px"><div class="vibe-mark">VIBE<span>BY CORE AI</span></div></div>
+    <p style="font-size:12px;color:#a5b0e8;margin-bottom:8px">Demonstration environment. Riverbend Business Alliance and every business, person, phone number and link shown here are fictional.</p>
+    <p><strong>CORE AI</strong> | Core Response AI | Powerful Business Solutions | A Tayyab Group, Inc. Company</p>
+    <p style="margin-top:4px;font-size:12px;color:#a5b0e8;"><strong>www.gocoreai.co</strong> · 202-431-3685 · abdul@gocoreai.co</p>
+  </div>
+</div>
+
+<!-- MEMBER MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Add Member</h2>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="section-label">Business Info</div>
+    <div class="field"><label>Business Name</label><input id="f-biz" /></div>
+    <div class="field-row">
+      <div class="field"><label>Contact Name</label><input id="f-contact" /></div>
+      <div class="field"><label>Industry / Category</label><input id="f-seat" placeholder="e.g. Real Estate, Legal, Marketing" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Phone</label><input id="f-phone" /></div>
+      <div class="field"><label>Email</label><input id="f-email" /></div>
+    </div>
+    <div class="field"><label>Website</label><input id="f-website" /></div>
+    <div class="field"><label>Networking Role</label><select id="f-role"></select></div>
+    <div class="field"><label>Google Review Link</label><input id="f-google-review" placeholder="https://g.page/r/..." /></div>
+    <div class="section-label">Membership Info</div>
+    <div class="field-row">
+      <div class="field"><label>Status</label><select id="f-status"><option>Active</option><option>Inactive</option></select></div>
+      <div class="field"><label>Renewal Date</label><input type="date" id="f-renewal" /></div>
+    </div>
+    <div class="field"><label>Member Since</label><input type="date" id="f-since" /></div>
+    <div class="field"><label>What They Offer</label><input id="f-offer" /></div>
+    <div class="field"><label>Looking For</label><input id="f-looking" /></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes"></textarea></div>
+    <div class="modal-btns">
+      <button class="del" id="deleteBtn" style="display:none" onclick="deleteMember()">Delete</button>
+      <button class="cancel" onclick="closeModal()">Cancel</button>
+      <button class="save" onclick="saveMember()">Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- VISITOR MODAL -->
+<div class="overlay" id="visitorOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="visitorModalTitle">Add Visitor</h2>
+      <button class="close-btn" onclick="closeVisitorModal()">✕</button>
+    </div>
+    <div class="section-label">Visitor Info</div>
+    <div class="field-row">
+      <div class="field"><label>First Name</label><input id="v-first" /></div>
+      <div class="field"><label>Last Name</label><input id="v-last" /></div>
+    </div>
+    <div class="field"><label>Business Name</label><input id="v-biz" /></div>
+    <div class="field-row">
+      <div class="field"><label>Phone</label><input id="v-phone" /></div>
+      <div class="field"><label>Email</label><input id="v-email" /></div>
+    </div>
+    <div class="field"><label>Industry</label><input id="v-industry" /></div>
+    <div class="section-label">Visit Info</div>
+    <div class="field-row">
+      <div class="field"><label>First Visit Date</label><input type="date" id="v-first-visit" /></div>
+      <div class="field"><label>Last Visit Date</label><input type="date" id="v-last-visit" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Sessions Used</label><select id="v-sessions"><option value="1">1 of 2</option><option value="2">2 of 2</option></select></div>
+      <div class="field"><label>Status</label><select id="v-status"><option>Active Visitor</option><option>Limit Reached — Needs to Join</option><option>Joined Riverbend</option></select></div>
+    </div>
+    <div class="field"><label>Referred By</label><input id="v-referred" /></div>
+    <div class="field"><label>Notes</label><textarea id="v-notes"></textarea></div>
+    <div class="modal-btns">
+      <button class="del" id="visitorDeleteBtn" style="display:none" onclick="deleteVisitor()">Delete</button>
+      <button class="cancel" onclick="closeVisitorModal()">Cancel</button>
+      <button class="save" onclick="saveVisitor()">Save Visitor</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="event-modal-overlay" id="eventModalOverlay">
+  <div class="event-modal">
+    <div class="modal-header">
+      <h2>Submit an Event</h2>
+      <button class="close-btn" onclick="closeEventModal()">✕</button>
+    </div>
+    <div class="section-label">Event Details</div>
+    <div class="field"><label>Event Name *</label><input id="ev-name" /></div>
+    <div class="field-row">
+      <div class="field"><label>Date *</label><input type="date" id="ev-date" /></div>
+      <div class="field"><label>Time *</label><input type="time" id="ev-time" /></div>
+    </div>
+    <div class="field"><label>Location *</label><input id="ev-location" /></div>
+    <div class="field"><label>Description</label><textarea id="ev-desc"></textarea></div>
+    <div class="field"><label>RSVP Link (optional)</label><input id="ev-rsvp" /></div>
+    <div class="field"><label>Your Name *</label><input id="ev-poster" /></div>
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeEventModal()">Cancel</button>
+      <button class="save" onclick="saveEvent()">Submit Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM / UPDATE PROFILE MODAL -->
+<div class="event-modal-overlay" id="claimModalOverlay">
+  <div class="event-modal">
+    <div class="modal-header">
+      <h2>Increase Your Business Visibility</h2>
+      <button class="close-btn" onclick="closeClaimModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.5">
+      Help other members and potential customers discover <strong id="claimBizName"></strong>. Businesses with complete profiles are easier to find, receive more referrals, and create stronger networking opportunities.
+      Changes are reviewed by Riverbend before they go live.
+    </p>
+    <div class="section-label">Business Info</div>
+    <div class="field"><label>Contact Person</label><input id="c-contact-person" /></div>
+    <div class="field"><label>Business Description</label><textarea id="c-description" placeholder="A short description of what your business does"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Primary Category</label><input id="c-category-primary" placeholder="e.g. Real Estate" /></div>
+      <div class="field"><label>Secondary Category</label><input id="c-category-secondary" /></div>
+    </div>
+    <div class="field"><label>Business Address</label><input id="c-address" /></div>
+
+    <div class="section-label">How You Network</div>
+    <div class="field">
+      <label>Networking Role<span class="field-hint">How you show up in this group — pick the closest fit</span></label>
+      <select id="c-role"></select>
+    </div>
+    <div class="field">
+      <label>Strategic Partnerships<span class="field-hint">Types of businesses you want to build ongoing partnerships with</span></label>
+      <div class="chip-box" id="chipbox-partnerships">
+        <div class="chip-list" id="chiplist-partnerships"></div>
+        <input class="chip-input" id="chipinput-partnerships" placeholder="Type to search, or add your own…" oninput="chipSuggest('partnerships')" onkeydown="chipKey(event,'partnerships')" autocomplete="off" />
+        <div class="chip-suggest" id="chipsuggest-partnerships"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Referral Opportunities<span class="field-hint">Types of businesses you regularly send referrals to, or want referrals from</span></label>
+      <div class="chip-box" id="chipbox-referrals">
+        <div class="chip-list" id="chiplist-referrals"></div>
+        <input class="chip-input" id="chipinput-referrals" placeholder="Type to search, or add your own…" oninput="chipSuggest('referrals')" onkeydown="chipKey(event,'referrals')" autocomplete="off" />
+        <div class="chip-suggest" id="chipsuggest-referrals"></div>
+      </div>
+    </div>
+
+    <div class="section-label">Social Media</div>
+    <div class="field"><label>Facebook</label><input id="c-facebook" placeholder="https://facebook.com/..." /></div>
+    <div class="field"><label>Instagram</label><input id="c-instagram" placeholder="https://instagram.com/..." /></div>
+    <div class="field"><label>LinkedIn</label><input id="c-linkedin" placeholder="https://linkedin.com/..." /></div>
+    <div class="field"><label>YouTube</label><input id="c-youtube" placeholder="https://youtube.com/..." /></div>
+    <div class="field"><label>X (Twitter)</label><input id="c-twitter" placeholder="https://x.com/..." /></div>
+    <div class="field"><label>TikTok</label><input id="c-tiktok" placeholder="https://tiktok.com/@..." /></div>
+
+    <div class="section-label">Online Presence</div>
+    <div class="field"><label>Google Business Profile URL</label><input id="c-google-business" placeholder="https://g.page/..." /></div>
+    <div class="field"><label>Google Review Link</label><input id="c-google-review" placeholder="https://g.page/r/..." /></div>
+
+    <div class="section-label">Branding</div>
+    <div class="field"><label>Business Logo (image URL)</label><input id="c-logo" placeholder="https://..." /></div>
+    <div class="field"><label>Featured Image (image URL)</label><input id="c-featured-image" /></div>
+
+    <div class="section-label">Coming Soon</div>
+    <p class="future-note">These fields are reserved for the next release and are not collected yet.</p>
+    <div class="field future-field"><label>Appointment Booking Link</label><input disabled placeholder="Coming soon" /></div>
+    <div class="field future-field"><label>Request a Quote Link</label><input disabled placeholder="Coming soon" /></div>
+    <div class="field future-field"><label>Promotional Offer / Member Coupon</label><input disabled placeholder="Coming soon" /></div>
+
+    <div class="consent-field">
+      <input type="checkbox" id="c-consent" />
+      <label for="c-consent">By joining this directory, you agree that other members of Riverbend Business Alliance may contact you regarding networking, referrals, and business opportunities using the information in your profile.</label>
+    </div>
+
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeClaimModal()">Cancel</button>
+      <button class="save" onclick="submitClaim()">Submit for Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUSINESS PROFILE VIEW MODAL (read-only, for clicking a business name) -->
+<div class="overlay" id="profileViewOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2>Business Profile</h2>
+      <button class="close-btn" onclick="closeProfileView()">✕</button>
+    </div>
+    <div id="profileViewBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── VIBE DEMO ENVIRONMENT ─────────────────────────────────────
+// DEMO_MODE = true  → all data lives in this browser (localStorage). No network,
+//                     no Supabase project, nothing real. Safe for public demos.
+// DEMO_MODE = false → behaves exactly like a normal org build. Fill in the
+//                     Supabase URL/key + TABLE_PREFIX below and it becomes a
+//                     live app with no other code changes.
+const DEMO_MODE   = true;
+const TABLE_PREFIX = 'demo';
+const SUPABASE_URL = '';   // ← real org builds only
+const SUPABASE_KEY = '';   // ← real org builds only
+
+// ── DEMO HELPERS ──────────────────────────────────────────────
+function demoDate(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+// Inline SVG initial-mark so the demo has real logos with zero external requests.
+function demoLogo(initials, bg) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="${bg}"/><text x="48" y="60" font-family="Inter,Arial,sans-serif" font-size="36" font-weight="800" fill="#ffffff" text-anchor="middle">${initials}</text></svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+function demoBanner(c1, c2, label) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="600" height="200" fill="url(#g)"/><text x="300" y="112" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="800" fill="#ffffff" text-anchor="middle" opacity="0.92">${label}</text></svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+// ── CONTROLLED VOCABULARIES ───────────────────────────────────
+const NETWORKING_ROLES = [
+  'Connector', 'Referral Partner', 'Service Provider', 'Ambassador',
+  'Mentor', 'Sponsor', 'Board Member', 'New Member'
+];
+
+const TAG_VOCABULARY = [
+  'Accounting', 'Business Law', 'Commercial Real Estate', 'Construction',
+  'Event Planning', 'Financial Planning', 'Fitness & Wellness', 'Food & Beverage',
+  'Graphic Design', 'Home Inspection', 'HVAC', 'Insurance', 'Interior Design',
+  'IT & Managed Services', 'Landscaping', 'Marketing', 'Mortgage Lending',
+  'Moving & Storage', 'Nonprofit', 'Payroll & HR', 'Photography',
+  'Property Management', 'Real Estate', 'Roofing', 'Solar', 'Staffing',
+  'Title & Escrow', 'Web Development'
+];
+
+// ── FICTIONAL DEMO DATA ───────────────────────────────────────
+// Every business, person, phone number, email and link below is invented for
+// demonstration purposes. Members are deliberately built as a referral web:
+// the real-estate cluster, the home-services cluster and the professional-
+// services cluster all point at each other.
+function buildDemoSeed() {
+  const members = [
+    {
+      id: 1, biz: 'Riverbend Realty Group', contact: 'Dana Whitfield', seat: 'Real Estate',
+      phone: '(555) 210-4417', email: 'dana@riverbendrealty.demo', website: 'www.riverbendrealty.demo',
+      google_review: 'https://example.com/review/riverbend-realty', status: 'Active',
+      since: '2021-03-14', renewal: demoDate(24),
+      offer: 'Residential listings, buyer representation, relocation guidance',
+      looking: 'Families relocating into the Riverbend school district',
+      notes: 'Hosts the quarterly homebuyer workshop with Keystone Mortgage.',
+      contact_person: 'Dana Whitfield',
+      description: 'A six-agent residential brokerage serving Riverbend and the surrounding river towns. Dana runs a monthly first-time buyer clinic and brings her whole client pipeline into the association for the trades and services they need after closing.',
+      category_primary: 'Real Estate', category_secondary: 'Property Management',
+      networking_role: 'Connector',
+      partnerships: ['Mortgage Lending', 'Title & Escrow', 'Home Inspection', 'Moving & Storage'],
+      referrals: ['Roofing', 'Landscaping', 'Insurance', 'Interior Design'],
+      facebook: 'https://facebook.com/riverbendrealty.demo',
+      instagram: 'https://instagram.com/riverbendrealty.demo',
+      linkedin: 'https://linkedin.com/company/riverbendrealty-demo',
+      youtube: '', twitter: 'https://x.com/riverbendrealty', tiktok: '',
+      google_business_url: 'https://example.com/gbp/riverbend-realty',
+      address: '118 Mill Street, Riverbend',
+      logo_url: demoLogo('RR', '#1a2b6b'),
+      featured_image_url: demoBanner('#1a2b6b', '#6b7fd4', 'Riverbend Realty Group'),
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 40).toISOString()
+    },
+    {
+      id: 2, biz: 'Keystone Mortgage Partners', contact: 'Marcus Elder', seat: 'Mortgage Lending',
+      phone: '(555) 210-8802', email: 'marcus@keystonemtg.demo', website: 'www.keystonemtg.demo',
+      google_review: 'https://example.com/review/keystone-mortgage', status: 'Active',
+      since: '2020-09-02', renewal: demoDate(61),
+      offer: 'Conventional, FHA and VA financing; same-week pre-approvals',
+      looking: 'Agents and builders who need a lender who answers on weekends',
+      notes: '',
+      contact_person: 'Marcus Elder',
+      description: 'An independent mortgage brokerage that works almost entirely on referral. Marcus co-hosts the buyer clinic with Riverbend Realty and offers free pre-approval reviews to any member sending a client his way.',
+      category_primary: 'Mortgage Lending', category_secondary: 'Financial Planning',
+      networking_role: 'Referral Partner',
+      partnerships: ['Real Estate', 'Title & Escrow', 'Insurance', 'Accounting'],
+      referrals: ['Real Estate', 'Home Inspection', 'Financial Planning'],
+      facebook: 'https://facebook.com/keystonemtg.demo',
+      instagram: '', linkedin: 'https://linkedin.com/company/keystonemtg-demo',
+      youtube: '', twitter: '', tiktok: '',
+      google_business_url: 'https://example.com/gbp/keystone-mortgage',
+      address: '4 Ferry Road, Suite 210, Riverbend',
+      logo_url: demoLogo('KM', '#0f766e'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 33).toISOString()
+    },
+    {
+      id: 3, biz: 'TrueLine Home Inspections', contact: 'Priya Raman', seat: 'Home Inspection',
+      phone: '(555) 210-5590', email: 'priya@truelineinspect.demo', website: 'www.truelineinspect.demo',
+      google_review: 'https://example.com/review/trueline', status: 'Active',
+      since: '2022-06-21', renewal: demoDate(9),
+      offer: 'Full home, radon and sewer scope inspections; 24-hour reports',
+      looking: 'Listing agents who want pre-inspections before going to market',
+      notes: 'Renewal coming up — good example of the renewal alert.',
+      contact_person: 'Priya Raman',
+      description: 'Two-inspector shop covering the county. Reports are delivered next day with photos and a repair-priority summary that agents can hand straight to their clients.',
+      category_primary: 'Home Inspection', category_secondary: '',
+      networking_role: 'Service Provider',
+      partnerships: ['Real Estate', 'Mortgage Lending', 'Roofing'],
+      referrals: ['Roofing', 'HVAC', 'Construction'],
+      facebook: '', instagram: 'https://instagram.com/truelineinspect.demo',
+      linkedin: 'https://linkedin.com/company/trueline-demo', youtube: '', twitter: '', tiktok: '',
+      google_business_url: '', address: '',
+      logo_url: demoLogo('TL', '#b45309'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 12).toISOString()
+    },
+    {
+      id: 4, biz: 'Copper Creek Title & Escrow', contact: 'Alan Voss', seat: 'Title & Escrow',
+      phone: '(555) 210-6134', email: 'alan@coppercreektitle.demo', website: 'www.coppercreektitle.demo',
+      google_review: '', status: 'Active', since: '2019-11-05', renewal: demoDate(148),
+      offer: 'Residential and commercial closings, title search, escrow services',
+      looking: 'Real estate agents and small commercial landlords',
+      notes: '',
+      contact_person: 'Alan Voss',
+      description: 'Closing office on Mill Street with evening and Saturday closings available for members of the association.',
+      category_primary: 'Title & Escrow', category_secondary: 'Business Law',
+      networking_role: 'Service Provider',
+      partnerships: ['Real Estate', 'Mortgage Lending', 'Business Law'],
+      referrals: ['Real Estate', 'Commercial Real Estate'],
+      facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/coppercreek-demo',
+      youtube: '', twitter: '', tiktok: '',
+      google_business_url: 'https://example.com/gbp/copper-creek-title',
+      address: '212 Mill Street, Riverbend',
+      logo_url: '', featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 90).toISOString()
+    },
+    {
+      id: 5, biz: 'Handled Moving Co.', contact: 'Rosa Delgado', seat: 'Moving & Storage',
+      phone: '(555) 210-7728', email: 'rosa@handledmoving.demo', website: '',
+      google_review: 'https://example.com/review/handled-moving', status: 'Active',
+      since: '2023-02-17', renewal: demoDate(96),
+      offer: 'Local moves, packing crews, short-term storage',
+      looking: 'Realtors, senior downsizing specialists, property managers',
+      notes: 'Low profile completion on purpose — shows the claim prompt.',
+      contact_person: '', description: '',
+      category_primary: 'Moving & Storage', category_secondary: '',
+      networking_role: 'New Member',
+      partnerships: ['Real Estate'], referrals: [],
+      facebook: 'https://facebook.com/handledmoving.demo',
+      instagram: '', linkedin: '', youtube: '', twitter: '', tiktok: '',
+      google_business_url: '', address: '',
+      logo_url: '', featured_image_url: '',
+      consent_contact: false, consent_date: ''
+    },
+    {
+      id: 6, biz: 'Northgate Roofing & Exteriors', contact: 'Tom Beckett', seat: 'Roofing',
+      phone: '(555) 210-3345', email: 'tom@northgateroof.demo', website: 'www.northgateroof.demo',
+      google_review: 'https://example.com/review/northgate-roofing', status: 'Active',
+      since: '2020-05-30', renewal: demoDate(72),
+      offer: 'Roof replacement, storm damage inspections, gutters and siding',
+      looking: 'Home inspectors, insurance agents, property managers',
+      notes: '',
+      contact_person: 'Tom Beckett',
+      description: 'Family roofing company in its second generation. Free storm inspections for any member referral, and a written report an insurance adjuster will accept.',
+      category_primary: 'Roofing', category_secondary: 'Construction',
+      networking_role: 'Referral Partner',
+      partnerships: ['Insurance', 'Home Inspection', 'Real Estate', 'Property Management'],
+      referrals: ['Solar', 'Landscaping', 'HVAC'],
+      facebook: 'https://facebook.com/northgateroof.demo',
+      instagram: 'https://instagram.com/northgateroof.demo',
+      linkedin: '', youtube: 'https://youtube.com/@northgateroof.demo', twitter: '', tiktok: '',
+      google_business_url: 'https://example.com/gbp/northgate-roofing',
+      address: '77 Northgate Pike, Riverbend',
+      logo_url: demoLogo('NR', '#991b1b'),
+      featured_image_url: demoBanner('#991b1b', '#f59e0b', 'Northgate Roofing'),
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 21).toISOString()
+    },
+    {
+      id: 7, biz: 'Blue Heron Landscaping', contact: 'Cassie Lin', seat: 'Landscaping',
+      phone: '(555) 210-9963', email: 'cassie@blueheronland.demo', website: 'www.blueheronland.demo',
+      google_review: '', status: 'Active', since: '2022-04-08', renewal: demoDate(115),
+      offer: 'Design and install, seasonal maintenance, drainage correction',
+      looking: 'Realtors prepping listings and commercial property managers',
+      notes: '',
+      contact_person: 'Cassie Lin',
+      description: 'Landscape design-build studio. Cassie offers a listing refresh package for agents: mulch, trim and a planted entry within a week of a call.',
+      category_primary: 'Landscaping', category_secondary: '',
+      networking_role: 'Service Provider',
+      partnerships: ['Real Estate', 'Property Management', 'Commercial Real Estate'],
+      referrals: ['Construction', 'Interior Design', 'Roofing'],
+      facebook: '', instagram: 'https://instagram.com/blueheronland.demo',
+      linkedin: '', youtube: '', twitter: '', tiktok: 'https://tiktok.com/@blueheronland.demo',
+      google_business_url: '', address: '9 Towpath Lane, Riverbend',
+      logo_url: demoLogo('BH', '#166534'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 18).toISOString()
+    },
+    {
+      id: 8, biz: 'Sunlit Solar Solutions', contact: 'Omar Haddad', seat: 'Solar',
+      phone: '(555) 210-2251', email: 'omar@sunlitsolar.demo', website: 'www.sunlitsolar.demo',
+      google_review: 'https://example.com/review/sunlit-solar', status: 'Active',
+      since: '2023-08-11', renewal: demoDate(41),
+      offer: 'Residential solar assessments, battery backup, financing walkthroughs',
+      looking: 'Roofers, electricians and realtors with clients in older homes',
+      notes: '',
+      contact_person: 'Omar Haddad',
+      description: 'Solar consultancy that starts with a no-pressure savings assessment. Works hand in hand with roofers so nobody puts panels on a roof that needs replacing first.',
+      category_primary: 'Solar', category_secondary: 'Construction',
+      networking_role: 'Referral Partner',
+      partnerships: ['Roofing', 'Real Estate', 'Construction'],
+      referrals: ['Roofing', 'HVAC', 'Financial Planning'],
+      facebook: '', instagram: 'https://instagram.com/sunlitsolar.demo',
+      linkedin: 'https://linkedin.com/company/sunlitsolar-demo', youtube: '', twitter: '', tiktok: '',
+      google_business_url: 'https://example.com/gbp/sunlit-solar', address: '',
+      logo_url: demoLogo('SS', '#f59e0b'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 9).toISOString()
+    },
+    {
+      id: 9, biz: 'Meridian Tax & Bookkeeping', contact: 'Grace Okonkwo', seat: 'Accounting',
+      phone: '(555) 210-4408', email: 'grace@meridiantax.demo', website: 'www.meridiantax.demo',
+      google_review: 'https://example.com/review/meridian-tax', status: 'Active',
+      since: '2018-01-22', renewal: demoDate(19),
+      offer: 'Small business bookkeeping, tax prep, quarterly planning sessions',
+      looking: 'Contractors and service businesses without a bookkeeper',
+      notes: '',
+      contact_person: 'Grace Okonkwo',
+      description: 'Boutique accounting practice focused on trades and service businesses under twenty employees. Grace runs a free quarterly tax-season briefing for the association.',
+      category_primary: 'Accounting', category_secondary: 'Payroll & HR',
+      networking_role: 'Mentor',
+      partnerships: ['Business Law', 'Financial Planning', 'Payroll & HR', 'Insurance'],
+      referrals: ['Construction', 'Roofing', 'Landscaping', 'Marketing'],
+      facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/meridiantax-demo',
+      youtube: '', twitter: '', tiktok: '',
+      google_business_url: 'https://example.com/gbp/meridian-tax',
+      address: '30 Ferry Road, Riverbend',
+      logo_url: demoLogo('MT', '#3730a3'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 55).toISOString()
+    },
+    {
+      id: 10, biz: 'Fairweather Law Group', contact: 'Nathan Cole', seat: 'Business Law',
+      phone: '(555) 210-1190', email: 'nathan@fairweatherlaw.demo', website: 'www.fairweatherlaw.demo',
+      google_review: '', status: 'Active', since: '2019-07-19', renewal: demoDate(132),
+      offer: 'Entity formation, contract review, commercial lease negotiation',
+      looking: 'New businesses and anyone signing a commercial lease',
+      notes: '',
+      contact_person: 'Nathan Cole',
+      description: 'Two-attorney business practice. Offers members a flat-fee contract review so nobody signs a lease or subcontract without a second set of eyes.',
+      category_primary: 'Business Law', category_secondary: 'Commercial Real Estate',
+      networking_role: 'Board Member',
+      partnerships: ['Accounting', 'Commercial Real Estate', 'Title & Escrow', 'Insurance'],
+      referrals: ['Accounting', 'Payroll & HR', 'IT & Managed Services'],
+      facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/fairweatherlaw-demo',
+      youtube: '', twitter: '', tiktok: '',
+      google_business_url: '', address: '212 Mill Street, Suite 3, Riverbend',
+      logo_url: demoLogo('FL', '#0f172a'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 62).toISOString()
+    },
+    {
+      id: 11, biz: 'Cobalt IT Services', contact: 'Devin Park', seat: 'IT & Managed Services',
+      phone: '(555) 210-3376', email: 'devin@cobaltit.demo', website: 'www.cobaltit.demo',
+      google_review: 'https://example.com/review/cobalt-it', status: 'Active',
+      since: '2021-10-04', renewal: demoDate(87),
+      offer: 'Managed IT, backup and recovery, cybersecurity basics for small teams',
+      looking: 'Offices of 5–50 people still running without IT support',
+      notes: '',
+      contact_person: 'Devin Park',
+      description: 'Managed IT provider for small offices. Free thirty-minute security check for member businesses, including a written list of the three things to fix first.',
+      category_primary: 'IT & Managed Services', category_secondary: 'Web Development',
+      networking_role: 'Service Provider',
+      partnerships: ['Business Law', 'Accounting', 'Marketing'],
+      referrals: ['Web Development', 'Marketing', 'Payroll & HR'],
+      facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/cobaltit-demo',
+      youtube: '', twitter: 'https://x.com/cobaltit', tiktok: '',
+      google_business_url: '', address: '',
+      logo_url: demoLogo('CI', '#1d4ed8'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 27).toISOString()
+    },
+    {
+      id: 12, biz: 'Anchor Insurance Advisors', contact: 'Lucy Barnes', seat: 'Insurance',
+      phone: '(555) 210-5512', email: 'lucy@anchorinsure.demo', website: 'www.anchorinsure.demo',
+      google_review: 'https://example.com/review/anchor-insurance', status: 'Active',
+      since: '2020-02-28', renewal: demoDate(5),
+      offer: 'Commercial liability, workers comp, home and auto bundles',
+      looking: 'Contractors, roofers and any member hiring their first employee',
+      notes: 'Renewal in under a week — demonstrates the urgent alert styling.',
+      contact_person: 'Lucy Barnes',
+      description: 'Independent agency representing multiple carriers. Lucy does an annual coverage audit for member businesses at no charge and is the first call when a storm claim goes sideways.',
+      category_primary: 'Insurance', category_secondary: 'Financial Planning',
+      networking_role: 'Connector',
+      partnerships: ['Roofing', 'Construction', 'Real Estate', 'Accounting', 'Payroll & HR'],
+      referrals: ['Roofing', 'Home Inspection', 'Business Law'],
+      facebook: 'https://facebook.com/anchorinsure.demo',
+      instagram: '', linkedin: 'https://linkedin.com/company/anchorinsure-demo',
+      youtube: '', twitter: '', tiktok: '',
+      google_business_url: 'https://example.com/gbp/anchor-insurance',
+      address: '58 Harbor Way, Riverbend',
+      logo_url: demoLogo('AI', '#0369a1'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 15).toISOString()
+    },
+    {
+      id: 13, biz: 'Bright Fox Marketing', contact: 'Sam Ortega', seat: 'Marketing',
+      phone: '(555) 210-8845', email: 'sam@brightfox.demo', website: 'www.brightfoxmarketing.demo',
+      google_review: 'https://example.com/review/bright-fox', status: 'Active',
+      since: '2022-09-13', renewal: demoDate(53),
+      offer: 'Local SEO, Google Business Profile management, review campaigns',
+      looking: 'Home service businesses invisible in local search',
+      notes: '',
+      contact_person: 'Sam Ortega',
+      description: 'Small marketing studio focused on local search. Sam runs a monthly clinic where members bring up their own Google listing on a screen and fix it live.',
+      category_primary: 'Marketing', category_secondary: 'Graphic Design',
+      networking_role: 'Ambassador',
+      partnerships: ['Web Development', 'Photography', 'IT & Managed Services'],
+      referrals: ['Roofing', 'Landscaping', 'Fitness & Wellness', 'Food & Beverage', 'Real Estate'],
+      facebook: 'https://facebook.com/brightfox.demo',
+      instagram: 'https://instagram.com/brightfox.demo',
+      linkedin: 'https://linkedin.com/company/brightfox-demo',
+      youtube: 'https://youtube.com/@brightfox.demo',
+      twitter: 'https://x.com/brightfoxdemo', tiktok: 'https://tiktok.com/@brightfox.demo',
+      google_business_url: 'https://example.com/gbp/bright-fox',
+      address: '5 Second Street, Riverbend',
+      logo_url: demoLogo('BF', '#c2410c'),
+      featured_image_url: demoBanner('#c2410c', '#f59e0b', 'Bright Fox Marketing'),
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 6).toISOString()
+    },
+    {
+      id: 14, biz: 'Willow & Vine Events', contact: 'Maya Duarte', seat: 'Event Planning',
+      phone: '(555) 210-7701', email: 'maya@willowandvine.demo', website: 'www.willowandvine.demo',
+      google_review: '', status: 'Active', since: '2023-05-26', renewal: demoDate(108),
+      offer: 'Corporate events, ribbon cuttings, member mixers, wedding planning',
+      looking: 'Caterers, photographers and venues to build a preferred vendor list',
+      notes: '',
+      contact_person: 'Maya Duarte',
+      description: 'Event planning studio that runs the association mixers at cost. Maya keeps a vendor list built entirely from member businesses.',
+      category_primary: 'Event Planning', category_secondary: '',
+      networking_role: 'Ambassador',
+      partnerships: ['Food & Beverage', 'Photography', 'Nonprofit', 'Marketing'],
+      referrals: ['Food & Beverage', 'Photography', 'Graphic Design'],
+      facebook: '', instagram: 'https://instagram.com/willowandvine.demo',
+      linkedin: '', youtube: '', twitter: '', tiktok: 'https://tiktok.com/@willowandvine.demo',
+      google_business_url: '', address: '',
+      logo_url: demoLogo('WV', '#7e22ce'), featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 30).toISOString()
+    },
+    {
+      id: 15, biz: 'Second Street Coffee Roasters', contact: 'Jules Amari', seat: 'Food & Beverage',
+      phone: '(555) 210-6690', email: 'jules@secondstreetcoffee.demo', website: '',
+      google_review: 'https://example.com/review/second-street-coffee', status: 'Active',
+      since: '2021-06-30', renewal: demoDate(78),
+      offer: 'Meeting space, catering for member events, wholesale beans',
+      looking: 'Businesses that need a place to meet clients downtown',
+      notes: '',
+      contact_person: 'Jules Amari', description: '',
+      category_primary: 'Food & Beverage', category_secondary: '',
+      networking_role: 'Connector',
+      partnerships: ['Event Planning', 'Nonprofit'], referrals: ['Marketing'],
+      facebook: '', instagram: 'https://instagram.com/secondstreetcoffee.demo',
+      linkedin: '', youtube: '', twitter: '', tiktok: '',
+      google_business_url: '', address: '14 Second Street, Riverbend',
+      logo_url: '', featured_image_url: '',
+      consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 44).toISOString()
+    },
+    {
+      id: 16, biz: 'Pinewood Wellness Studio', contact: 'Erin Salas', seat: 'Fitness & Wellness',
+      phone: '(555) 210-2214', email: 'erin@pinewoodwellness.demo', website: 'www.pinewoodwellness.demo',
+      google_review: '', status: 'Inactive', since: '2022-11-15', renewal: demoDate(-38),
+      offer: 'Small group training, corporate wellness sessions',
+      looking: 'Employers who want a wellness benefit that people actually use',
+      notes: 'Lapsed member — shows the Inactive filter and expired badge.',
+      contact_person: 'Erin Salas', description: '',
+      category_primary: 'Fitness & Wellness', category_secondary: '',
+      networking_role: '', partnerships: [], referrals: [],
+      facebook: '', instagram: 'https://instagram.com/pinewoodwellness.demo',
+      linkedin: '', youtube: '', twitter: '', tiktok: '',
+      google_business_url: '', address: '', logo_url: '', featured_image_url: '',
+      consent_contact: false, consent_date: ''
+    }
+  ];
+
+  const visitors = [
+    { id: 1, first: 'Hannah', last: 'Reyes', biz: 'Reyes Interior Design', phone: '(555) 331-0092', email: 'hannah@reyesinteriors.demo', industry: 'Interior Design', first_visit: demoDate(-28), last_visit: demoDate(-14), sessions: 2, status: 'Limit Reached — Needs to Join', referred: 'Dana Whitfield', notes: 'Ready to join — Dana is walking her through the application.' },
+    { id: 2, first: 'Curtis', last: 'Boyd', biz: 'Boyd Electric', phone: '(555) 331-4471', email: 'curtis@boydelectric.demo', industry: 'Construction', first_visit: demoDate(-14), last_visit: demoDate(-14), sessions: 1, status: 'Active Visitor', referred: 'Omar Haddad', notes: '' },
+    { id: 3, first: 'Nia', last: 'Fletcher', biz: 'Fletcher Photography', phone: '(555) 331-8830', email: 'nia@fletcherphoto.demo', industry: 'Photography', first_visit: demoDate(-7), last_visit: demoDate(-7), sessions: 1, status: 'Active Visitor', referred: 'Maya Duarte', notes: 'Maya wants her on the preferred vendor list.' },
+    { id: 4, first: 'Peter', last: 'Nowak', biz: 'Nowak Payroll Services', phone: '(555) 331-2216', email: 'peter@nowakpayroll.demo', industry: 'Payroll & HR', first_visit: demoDate(-42), last_visit: demoDate(-21), sessions: 2, status: 'Joined Riverbend', referred: 'Grace Okonkwo', notes: 'Converted to full member last month.' },
+    { id: 5, first: 'Sasha', last: 'Kim', biz: 'Kim Property Management', phone: '(555) 331-6654', email: 'sasha@kimpm.demo', industry: 'Property Management', first_visit: demoDate(-3), last_visit: demoDate(-3), sessions: 1, status: 'Active Visitor', referred: 'Cassie Lin', notes: '' }
+  ];
+
+  const meetings = [
+    { id: 1, date: demoDate(-28), attendance: { 1: 'present', 2: 'present', 3: 'present', 6: 'present', 9: 'present', 10: 'present', 12: 'present', 13: 'present' }, visitor_attendance: { 1: 'present' } },
+    { id: 2, date: demoDate(-21), attendance: { 1: 'present', 2: 'present', 4: 'present', 6: 'present', 7: 'present', 9: 'present', 12: 'present', 13: 'present', 14: 'present' }, visitor_attendance: { 1: 'present', 4: 'present' } },
+    { id: 3, date: demoDate(-14), attendance: { 1: 'present', 2: 'present', 3: 'present', 5: 'present', 6: 'present', 8: 'present', 11: 'present', 12: 'present', 13: 'present', 15: 'present' }, visitor_attendance: { 1: 'present', 2: 'present' } },
+    { id: 4, date: demoDate(-7), attendance: { 1: 'present', 2: 'present', 3: 'present', 4: 'present', 6: 'present', 7: 'present', 8: 'present', 9: 'present', 11: 'present', 12: 'present', 13: 'present', 14: 'present' }, visitor_attendance: { 3: 'present' } }
+  ];
+
+  const announcements = [
+    { id: 1, type: 'pinned', text: 'New here? Open any business card and tap “Claim or Update This Business Profile.” Complete profiles are what make the referral matching work — the members getting the most introductions are the ones with a description, categories and partnership tags filled in.', author: 'Admin', date: demoDate(-2), created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
+    { id: 2, type: 'announcement', text: 'Referral of the month: Dana Whitfield sent three closing clients to Copper Creek Title, and Alan turned around every one of them inside a week. That is the loop working exactly the way it should.', author: 'Admin', date: demoDate(-5), created_at: new Date(Date.now() - 86400000 * 5).toISOString() },
+    { id: 3, type: 'reminder', text: 'Bring business cards Thursday — we are running structured one-to-ones based on the partnership tags in your profiles. Check the Connections tab beforehand to see who you have been matched with.', author: 'Admin', date: demoDate(-9), created_at: new Date(Date.now() - 86400000 * 9).toISOString() },
+    { id: 4, type: 'announcement', text: 'Grace Okonkwo is hosting a free quarterly tax briefing for members on the last Tuesday of the month. Space is limited to twenty.', author: 'Admin', date: demoDate(-16), created_at: new Date(Date.now() - 86400000 * 16).toISOString() }
+  ];
+
+  const events = [
+    { id: 1, name: 'Monthly Member Mixer', date: demoDate(11), time: '17:30', location: 'Second Street Coffee Roasters', description: 'Open networking with structured introductions. Bring a referral you owe someone.', rsvp: 'https://example.com/rsvp/mixer', poster: 'Maya Duarte', status: 'approved', submitted: demoDate(-20) },
+    { id: 2, name: 'Local Search Clinic: Fix Your Google Listing Live', date: demoDate(19), time: '08:00', location: 'Riverbend Library, Room B', description: 'Bring a laptop. We will pull up your Google Business Profile and fix it on the spot.', rsvp: '', poster: 'Sam Ortega', status: 'approved', submitted: demoDate(-12) },
+    { id: 3, name: 'First-Time Homebuyer Workshop', date: demoDate(32), time: '18:00', location: 'Riverbend Realty Group Office', description: 'Co-hosted by Riverbend Realty and Keystone Mortgage. Members welcome to bring clients.', rsvp: 'https://example.com/rsvp/homebuyer', poster: 'Dana Whitfield', status: 'approved', submitted: demoDate(-8) },
+    { id: 4, name: 'Contractor Coffee & Coordination', date: demoDate(26), time: '07:30', location: 'Northgate Roofing Yard', description: 'Informal meetup for the trades to swap subcontractor leads and crew availability.', rsvp: '', poster: 'Tom Beckett', status: 'pending', submitted: demoDate(-1) },
+    { id: 5, name: 'Quarterly Tax Briefing', date: demoDate(-6), time: '12:00', location: 'Meridian Tax & Bookkeeping', description: 'Deadlines, deductions and what changed this year for small businesses.', rsvp: '', poster: 'Grace Okonkwo', status: 'approved', submitted: demoDate(-30) }
+  ];
+
+  const pending_updates = [
+    {
+      id: 1, member_id: 5, status: 'pending',
+      submitted_at: new Date(Date.now() - 86400000 * 1).toISOString(), reviewed_at: null, admin_notes: '',
+      submitted: {
+        contact_person: 'Rosa Delgado',
+        description: 'Local moving company with a four-person crew and climate-controlled short-term storage. We hold move dates for member referrals and do free on-site estimates within the county.',
+        category_primary: 'Moving & Storage', category_secondary: 'Property Management',
+        networking_role: 'Referral Partner',
+        partnerships: ['Real Estate', 'Property Management', 'Title & Escrow'],
+        referrals: ['Real Estate', 'Interior Design', 'Landscaping'],
+        address: '43 Depot Road, Riverbend',
+        facebook: 'https://facebook.com/handledmoving.demo',
+        instagram: 'https://instagram.com/handledmoving.demo',
+        linkedin: '', youtube: '', twitter: '', tiktok: '',
+        google_business_url: 'https://example.com/gbp/handled-moving',
+        google_review: 'https://example.com/review/handled-moving',
+        logo_url: demoLogo('HM', '#4d7c0f'), featured_image_url: '',
+        consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 1).toISOString()
+      }
+    },
+    {
+      id: 2, member_id: 15, status: 'pending',
+      submitted_at: new Date(Date.now() - 86400000 * 3).toISOString(), reviewed_at: null, admin_notes: '',
+      submitted: {
+        contact_person: 'Jules Amari',
+        description: 'Coffee bar and small-batch roastery on Second Street with a back room that seats twelve. Free room booking for member meetings, and wholesale pricing for any member office.',
+        category_primary: 'Food & Beverage', category_secondary: 'Event Planning',
+        networking_role: 'Connector',
+        partnerships: ['Event Planning', 'Nonprofit', 'Marketing'],
+        referrals: ['Marketing', 'Photography', 'Graphic Design'],
+        address: '14 Second Street, Riverbend',
+        facebook: 'https://facebook.com/secondstreetcoffee.demo',
+        instagram: 'https://instagram.com/secondstreetcoffee.demo',
+        linkedin: '', youtube: '', twitter: '', tiktok: 'https://tiktok.com/@secondstreetcoffee.demo',
+        google_business_url: 'https://example.com/gbp/second-street-coffee',
+        google_review: 'https://example.com/review/second-street-coffee',
+        logo_url: demoLogo('SC', '#78350f'), featured_image_url: '',
+        consent_contact: true, consent_date: new Date(Date.now() - 86400000 * 3).toISOString()
+      }
+    },
+    {
+      id: 3, member_id: 8, status: 'approved',
+      submitted_at: new Date(Date.now() - 86400000 * 9).toISOString(),
+      reviewed_at: new Date(Date.now() - 86400000 * 8).toISOString(), admin_notes: 'Approved — looks good.',
+      submitted: { description: 'Solar consultancy…', category_primary: 'Solar' }
+    }
+  ];
+
+  // Six months of platform metrics, ending with the current month.
+  const analytics = {
+    months: 6,
+    active_members: [7, 9, 10, 12, 13, 14],
+    profile_views: [64, 88, 121, 154, 176, 198],
+    outbound_clicks: [21, 33, 47, 58, 71, 84],
+    event_engagement: [12, 18, 24, 31, 29, 38],
+    referral_intros: [3, 6, 9, 14, 17, 21]
+  };
+
+  return { members, visitors, meetings, announcements, events, pending_updates, analytics, activity: [] };
+}
+
+// ── LOCAL DEMO DATABASE (mimics the Supabase client surface) ───
+const DEMO_STORE_KEY = 'vibe_demo_store_v1';
+let DEMO_DB = null;
+
+function demoStoreLoad() {
+  try {
+    const raw = localStorage.getItem(DEMO_STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* storage unavailable — fall back to memory only */ }
+  return null;
+}
+function demoStoreSave() {
+  try { localStorage.setItem(DEMO_STORE_KEY, JSON.stringify(DEMO_DB)); } catch (e) {}
+}
+function demoStoreInit(force) {
+  DEMO_DB = (!force && demoStoreLoad()) || buildDemoSeed();
+  demoStoreSave();
+}
+function demoTableName(name) { return name.replace(TABLE_PREFIX + '_', ''); }
+function demoRows(name) {
+  const key = demoTableName(name);
+  if (!DEMO_DB[key]) DEMO_DB[key] = [];
+  return DEMO_DB[key];
+}
+function demoNextId(rows) { return rows.reduce((max, r) => Math.max(max, r.id || 0), 0) + 1; }
+
+const demoClient = {
+  from(name) {
+    return {
+      select() {
+        const q = {
+          _rows: [...demoRows(name)],
+          order(col, opts) {
+            const asc = !opts || opts.ascending !== false;
+            q._rows.sort((a, b) => {
+              const x = a[col] ?? '', y = b[col] ?? '';
+              return (x > y ? 1 : x < y ? -1 : 0) * (asc ? 1 : -1);
+            });
+            return q;
+          },
+          then(resolve, reject) {
+            return Promise.resolve({ data: q._rows, error: null }).then(resolve, reject);
+          }
+        };
+        return q;
+      },
+      insert(payload) {
+        const rows = demoRows(name);
+        (Array.isArray(payload) ? payload : [payload]).forEach(obj => {
+          rows.push(Object.assign({ id: demoNextId(rows), created_at: new Date().toISOString() }, obj));
+        });
+        demoStoreSave();
+        return Promise.resolve({ data: null, error: null });
+      },
+      update(patch) {
+        return {
+          eq(col, val) {
+            demoRows(name).forEach(r => { if (String(r[col]) === String(val)) Object.assign(r, patch); });
+            demoStoreSave();
+            return Promise.resolve({ data: null, error: null });
+          }
+        };
+      },
+      delete() {
+        return {
+          eq(col, val) {
+            const key = demoTableName(name);
+            DEMO_DB[key] = demoRows(name).filter(r => String(r[col]) !== String(val));
+            demoStoreSave();
+            return Promise.resolve({ data: null, error: null });
+          }
+        };
+      }
+    };
+  }
+};
+
+if (DEMO_MODE) demoStoreInit(false);
+const sb = DEMO_MODE ? demoClient : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function resetDemoData() {
+  if (!confirm('Reset the demo back to its original state? Any changes made during this session will be cleared.')) return;
+  demoStoreInit(true);
+  try { localStorage.removeItem('vibe_demo_checkin_lock'); } catch (e) {}
+  location.reload();
+}
+
+// Lightweight in-demo activity tracking so the analytics tab responds live.
+function logActivity(type, detail) {
+  if (!DEMO_DB) return;
+  DEMO_DB.activity = DEMO_DB.activity || [];
+  DEMO_DB.activity.push({ type, detail: detail || '', at: new Date().toISOString() });
+  demoStoreSave();
+  if (typeof renderAnalytics === 'function' && document.getElementById('view-analytics')) renderAnalytics();
+}
+function activityCount(type) {
+  return (DEMO_DB && DEMO_DB.activity ? DEMO_DB.activity : []).filter(a => a.type === type).length;
+}
+
+// ── CONSTANTS ─────────────────────────────────────────────────
+const PASSWORD_ADMIN   = "vibeadmin2026";
+const PASSWORD_MEMBER  = "vibe2026";
+let isAdmin = false;
+let editingId = null;
+let editingVisitorId = null;
+let currentSort = 'biz';
+let currentAttendance = {};
+let currentVisitorAttendance = {};
+
+// ── DATA ──────────────────────────────────────────────────────
+let members = [];
+let visitors = [];
+let meetings = [];
+let announcements = [];
+let events = [];
+let pendingUpdates = [];
+let claimingMemberId = null;
+
+// ── LOAD DATA FROM SUPABASE ───────────────────────────────────
+async function loadAll() {
+  const [m, v, mt, a, e, pu] = await Promise.all([
+    sb.from('demo_members').select('*').order('biz'),
+    sb.from('demo_visitors').select('*').order('created_at'),
+    sb.from('demo_meetings').select('*').order('date', { ascending: false }),
+    sb.from('demo_announcements').select('*').order('created_at', { ascending: false }),
+    sb.from('demo_events').select('*').order('date'),
+    sb.from('demo_pending_updates').select('*').order('submitted_at', { ascending: false }),
+  ]);
+  members = (m.data || []).map(r => ({
+    id: r.id, biz: r.biz||'', contact: r.contact||'', seat: r.seat||'',
+    phone: r.phone||'', email: r.email||'', website: r.website||'',
+    googleReview: r.google_review||'',
+    status: r.status||'Active', since: r.since||'', renewal: r.renewal||'',
+    offer: r.offer||'', looking: r.looking||'', notes: r.notes||'',
+    contactPerson: r.contact_person||'', description: r.description||'',
+    categoryPrimary: r.category_primary||'', categorySecondary: r.category_secondary||'',
+    facebook: r.facebook||'', instagram: r.instagram||'', linkedin: r.linkedin||'', youtube: r.youtube||'',
+    googleBusinessUrl: r.google_business_url||'', address: r.address||'',
+    logoUrl: r.logo_url||'', featuredImageUrl: r.featured_image_url||'',
+    twitter: r.twitter||'', tiktok: r.tiktok||'',
+    networkingRole: r.networking_role||'',
+    partnerships: r.partnerships||[], referrals: r.referrals||[],
+    consentContact: r.consent_contact||false, consentDate: r.consent_date||''
+  }));
+  pendingUpdates = (pu.data || []).map(r => ({
+    id: r.id, memberId: r.member_id, submitted: r.submitted||{},
+    status: r.status||'pending', submittedAt: r.submitted_at||'',
+    reviewedAt: r.reviewed_at||'', adminNotes: r.admin_notes||''
+  }));
+  visitors = (v.data || []).map(r => ({
+    id: r.id, first: r.first||'', last: r.last||'', biz: r.biz||'',
+    phone: r.phone||'', email: r.email||'', industry: r.industry||'',
+    firstVisit: r.first_visit||'', lastVisit: r.last_visit||'',
+    sessions: r.sessions||1, status: r.status||'Active Visitor',
+    referred: r.referred||'', notes: r.notes||''
+  }));
+  meetings = (mt.data || []).map(r => ({
+    id: r.id, date: r.date,
+    attendance: r.attendance||{},
+    visitorAttendance: r.visitor_attendance||{}
+  }));
+  announcements = (a.data || []).map(r => ({
+    id: r.id, type: r.type||'announcement', text: r.text||'',
+    author: r.author||'Admin', date: r.date||''
+  }));
+  events = (e.data || []).map(r => ({
+    id: r.id, name: r.name||'', date: r.date||'', time: r.time||'',
+    location: r.location||'', desc: r.description||'', rsvp: r.rsvp||'',
+    poster: r.poster||'', status: r.status||'pending', submitted: r.submitted||''
+  }));
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+const isCheckin = window.location.search.includes('checkin');
+
+window.addEventListener('load', async () => {
+  if (isCheckin) {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('checkinPage').style.display = 'block';
+    await loadAll();
+    initCheckin();
+    return;
+  }
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('gate').style.display = 'block';
+});
+
+// ── AUTH ──────────────────────────────────────────────────────
+function checkPassword() {
+  const val = document.getElementById('passwordInput').value;
+  if (val === PASSWORD_ADMIN) {
+    isAdmin = true;
+    launchApp();
+  } else if (val === PASSWORD_MEMBER) {
+    isAdmin = false;
+    launchApp();
+  } else {
+    document.getElementById('gateError').style.display = 'block';
+  }
+}
+
+async function launchApp() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await loadAll();
+  applyAccessLevel();
+  document.getElementById('meetingHeader').textContent = 'Demo environment · Meets 2nd &amp; 4th Thursday, 8:00 AM';
+  if (isAdmin) {
+    const renewalBtn = document.getElementById('sort-renewal');
+    if (renewalBtn) renewalBtn.style.display = '';
+  }
+  populateVocabSelects();
+  render(); renderVisitors(); renderAnnouncements(); renderEvents(); renderPendingUpdates();
+  renderConnections(); renderAnalytics();
+  document.getElementById('meetingDate').value = new Date().toISOString().slice(0,10);
+  loadAttendance();
+  renderPastMeetings();
+}
+
+function applyAccessLevel() {
+  const hide = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; };
+  if (!isAdmin) {
+    hide('exportBtn'); hide('copyEmailsBtn'); hide('addVisitorBtn'); hide('addMemberBtn');
+    hide('tab-visitors'); hide('tab-attendance'); hide('saveAttBtn'); hide('sort-renewal'); hide('tab-claims'); hide('tab-analytics');
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#eef2ff;border-bottom:2px solid #6b7fd4;padding:8px 28px;text-align:center;font-size:13px;color:#1a2b6b;font-weight:600;';
+    banner.textContent = '👥 Member View — Contact Riverbend admin to make changes';
+    document.querySelector('.tabs').before(banner);
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function showTab(tab) {
+  ['members','visitors','attendance','announcements','events','connections','claims','analytics'].forEach(t => {
+    const view = document.getElementById('view-'+t);
+    const btn = document.getElementById('tab-'+t);
+    if (view) view.style.display = t === tab ? 'block' : 'none';
+    if (btn) btn.className = 'tab' + (t === tab ? ' active' : '');
+  });
+  if (tab === 'connections') renderConnections();
+  if (tab === 'analytics') renderAnalytics();
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  return Math.ceil((new Date(dateStr) - new Date()) / (1000*60*60*24));
+}
+
+function renewalBadge(dateStr) {
+  const days = daysUntil(dateStr);
+  if (!days && days !== 0) return '';
+  const date = new Date(dateStr).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if (days < 0) return `<span class="renewal-badge renewal-urgent">Expired</span>`;
+  if (days <= 30) return `<span class="renewal-badge renewal-urgent">⚠️ ${date}</span>`;
+  if (days <= 90) return `<span class="renewal-badge renewal-soon">⏰ ${date}</span>`;
+  return `<span class="renewal-badge renewal-ok">${date}</span>`;
+}
+
+function daysLeftBadge(dateStr) {
+  const days = daysUntil(dateStr);
+  if (days === null) return '—';
+  if (days < 0) return `<span style="color:#dc2626;font-weight:800">Expired</span>`;
+  if (days <= 30) return `<span style="color:#dc2626;font-weight:800">${days} days</span>`;
+  if (days <= 90) return `<span style="color:#d97706;font-weight:700">${days} days</span>`;
+  return `<span style="color:#059669;font-weight:600">${days} days</span>`;
+}
+
+function setSort(key) {
+  currentSort = key;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-'+key).classList.add('active');
+  render();
+}
+
+function sortMembers(list) {
+  return [...list].sort((a,b) => {
+    if (currentSort === 'renewal') return (new Date(a.renewal||'9999') - new Date(b.renewal||'9999'));
+    return (a.biz||'').localeCompare(b.biz||'');
+  });
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function reviewLinkHtml(url, small) {
+  if (!url) return '';
+  const size = small ? 'font-size:12px;padding:3px 8px;' : 'font-size:12px;padding:4px 10px;';
+  return `<a href="${url}" target="_blank" style="display:inline-block;margin-top:4px;${size}background:#fffbeb;color:#d97706;border:1px solid #fcd34d;border-radius:20px;text-decoration:none;font-weight:700">⭐ Leave a Review</a>`;
+}
+
+// Real brand icon glyphs (standard open-license icon paths), not emoji.
+const SOCIAL_ICONS = {
+  facebook: { color: '#1877F2', path: 'M22.675 0h-21.35C.593 0 0 .593 0 1.326v21.348C0 23.406.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.674V1.326C24 .593 23.406 0 22.675 0' },
+  instagram: { color: '#E4405F', path: 'M12 0C8.74 0 8.333.014 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.014 8.333 0 8.74 0 12s.014 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.986 8.74 24 12 24s3.667-.014 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.058-1.28.072-1.687.072-4.947s-.014-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.014 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227a3.81 3.81 0 0 1-.9 1.382 3.744 3.744 0 0 1-1.38.896c-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421a3.716 3.716 0 0 1-1.379-.9 3.644 3.644 0 0 1-.9-1.38c-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z' },
+  linkedin: { color: '#0A66C2', path: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z' },
+  youtube: { color: '#FF0000', path: 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z' },
+  twitter: { color: '#000000', path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z' },
+  tiktok: { color: '#010101', path: 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z' }
+};
+
+function socialIconSvg(type, size) {
+  const s = SOCIAL_ICONS[type];
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${s.color}" xmlns="http://www.w3.org/2000/svg"><path d="${s.path}"/></svg>`;
+}
+
+// Member-visible social links. Google Business Profile URL is intentionally NOT included here —
+// it's collected for internal/admin use only and not shown on member-facing cards.
+function socialLinksHtml(m) {
+  const links = [];
+  if (m.facebook) links.push(`<a href="${m.facebook}" target="_blank" title="Facebook" class="social-icon-link">${socialIconSvg('facebook', 18)}</a>`);
+  if (m.instagram) links.push(`<a href="${m.instagram}" target="_blank" title="Instagram" class="social-icon-link">${socialIconSvg('instagram', 18)}</a>`);
+  if (m.linkedin) links.push(`<a href="${m.linkedin}" target="_blank" title="LinkedIn" class="social-icon-link">${socialIconSvg('linkedin', 18)}</a>`);
+  if (m.youtube) links.push(`<a href="${m.youtube}" target="_blank" title="YouTube" class="social-icon-link">${socialIconSvg('youtube', 18)}</a>`);
+  if (m.twitter) links.push(`<a href="${m.twitter}" target="_blank" title="X (Twitter)" class="social-icon-link">${socialIconSvg('twitter', 18)}</a>`);
+  if (m.tiktok) links.push(`<a href="${m.tiktok}" target="_blank" title="TikTok" class="social-icon-link">${socialIconSvg('tiktok', 18)}</a>`);
+  if (links.length === 0) return '';
+  return `<div style="display:flex;gap:6px;margin-top:6px">${links.join('')}</div>`;
+}
+
+// ── PROFILE COMPLETION ────────────────────────────────────────
+const COMPLETION_FIELDS = [
+  { key: 'website', label: 'Website' },
+  { key: 'googleReview', label: 'Google Review Link' },
+  { key: 'googleBusinessUrl', label: 'Google Business Profile' },
+  { key: 'description', label: 'Business Description' },
+  { key: 'categoryPrimary', label: 'Primary Category' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'logoUrl', label: 'Business Logo' },
+  { key: 'address', label: 'Business Address' },
+  { key: 'networkingRole', label: 'Networking Role' },
+  { key: 'partnerships', label: 'Strategic Partnerships' },
+  { key: 'referrals', label: 'Referral Opportunities' }
+];
+
+function profileCompletion(m) {
+  const filled = COMPLETION_FIELDS.filter(f => (m[f.key]||'').toString().trim() !== '');
+  const pct = Math.round((filled.length / COMPLETION_FIELDS.length) * 100);
+  const missing = COMPLETION_FIELDS.filter(f => (m[f.key]||'').toString().trim() === '').map(f => f.label);
+  return { pct, missing };
+}
+
+function completionHtml(m) {
+  const { pct, missing } = profileCompletion(m);
+  const barClass = pct >= 70 ? '' : pct >= 40 ? 'mid' : 'low';
+  const missingText = missing.length ? `Missing: ${missing.slice(0,3).join(', ')}${missing.length>3?'…':''}` : 'Profile complete! 🎉';
+  return `<div class="completion-wrap">
+    <div class="completion-label">Profile Completion: ${pct}% <span style="font-weight:500;color:#999">— ${missingText}</span></div>
+    <div class="completion-bar-bg"><div class="completion-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function claimBtnHtml(m) {
+  return `<button class="claim-btn" onclick="openClaimModal(${m.id})">📋 Claim or Update This Business Profile</button>`;
+}
+
+// ── MEMBERS ───────────────────────────────────────────────────
+function render() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const sf = document.getElementById('statusFilter').value;
+  const cf = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : 'All';
+  const rf = document.getElementById('roleFilter') ? document.getElementById('roleFilter').value : 'All';
+  let filtered = members.filter(m => {
+    const haystack = [m.biz, m.contact, m.seat, m.description, m.categoryPrimary, m.categorySecondary,
+                      m.networkingRole, m.offer, m.looking, asText(m.partnerships), asText(m.referrals)]
+                     .join(' ').toLowerCase();
+    const matchS = sf === 'All' || m.status === sf;
+    const matchQ = !q || haystack.includes(q);
+    const matchC = cf === 'All' || memberCats(m).includes(cf) || asList(m.partnerships).includes(cf) || asList(m.referrals).includes(cf);
+    const matchR = rf === 'All' || m.networkingRole === rf;
+    return matchS && matchQ && matchC && matchR;
+  });
+  filtered = sortMembers(filtered);
+
+  const active = members.filter(m => m.status==='Active').length;
+  const expiring = members.filter(m => { const d=daysUntil(m.renewal); return d!==null && d<=30 && d>=0; }).length;
+  document.getElementById('tableHeader').className = isAdmin ? 'table-header' : 'table-header member-view';
+  document.getElementById('tableHeader').innerHTML = isAdmin
+    ? '<div>Business / Contact</div><div>Category</div><div>Renewal Date</div><div>Days Left</div><div>Phone</div><div>Email</div><div>Actions</div>'
+    : '<div>Business / Contact</div><div>Category</div><div>Phone</div><div>Email</div><div>Actions</div>';
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Members</div><div class="stat-value">${members.length}</div><div class="stat-sub">Riverbend members</div></div>
+    <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" style="color:#059669">${active}</div><div class="stat-sub">current members</div></div>
+    ${isAdmin ? `<div class="stat-card"><div class="stat-label">Renewing Soon</div><div class="stat-value" style="color:#d97706">${expiring}</div><div class="stat-sub">within 30 days</div></div>` : ''}
+    ${isAdmin ? `<div class="stat-card"><div class="stat-label">Visitors</div><div class="stat-value" style="color:var(--navy)">${visitors.filter(v=>v.status==='Active Visitor').length}</div><div class="stat-sub">active visitors</div></div>` : ''}
+  `;
+
+  const urgent = isAdmin ? members.filter(m => { const d=daysUntil(m.renewal); return d!==null && d<=30 && d>=0; }) : [];
+  document.getElementById('alertsRow').innerHTML = urgent.map(m => `
+    <div class="alert-card ${daysUntil(m.renewal)<=14?'':'warning'}">
+      <span style="font-size:18px">${daysUntil(m.renewal)<=14?'🚨':'⚠️'}</span>
+      <div class="alert-text">${m.biz} (${m.contact}) — renewal in ${daysUntil(m.renewal)} days</div>
+    </div>`).join('');
+
+  document.getElementById('tableBody').innerHTML = filtered.length === 0
+    ? '<div class="empty">No members found</div>'
+    : filtered.map(m => `
+    <div class="table-row ${isAdmin ? '' : 'member-view'}">
+      <div><div class="biz-name"><span class="biz-name-link" onclick="openProfileView(${m.id})">${m.biz}</span>${roleBadgeHtml(m)}</div><div class="biz-contact">${m.contact}</div>${m.website?`<div style="font-size:11px;color:#aaa">${m.website}</div>`:''}${tagRowHtml(m)}${reviewLinkHtml(m.googleReview)}${socialLinksHtml(m)}${completionHtml(m)}${claimBtnHtml(m)}</div>
+      <div><span class="seat-badge">${m.seat}</span></div>
+      ${isAdmin ? `<div>${renewalBadge(m.renewal)}</div><div>${daysLeftBadge(m.renewal)}</div>` : ''}
+      <div style="font-size:13px;color:var(--gray)"><a href="tel:${m.phone}" style="color:inherit;text-decoration:none">${m.phone}</a></div>
+      <div style="font-size:12px;color:var(--periwinkle)"><a href="mailto:${m.email}" style="color:inherit;text-decoration:none">${m.email}</a></div>
+      <div class="col-actions">${isAdmin?`<button class="action-btn" onclick="openModal(${m.id})">✏️</button>`:''}</div>
+    </div>`).join('');
+
+  document.getElementById('mobileCards').innerHTML = filtered.length === 0
+    ? '<div class="empty">No members found</div>'
+    : filtered.map(m => `
+    <div class="member-card-item">
+      <div>
+        <div class="member-card-name"><span class="biz-name-link" onclick="openProfileView(${m.id})">${m.biz}</span>${roleBadgeHtml(m)}</div>
+        <div class="member-card-contact">${m.contact}</div>
+        ${m.website?`<div class="member-card-website">${m.website}</div>`:''}
+        <div class="member-card-links" style="margin-top:8px">
+          ${m.phone?`<a href="tel:${m.phone}" class="member-card-phone">📞 ${m.phone}</a>`:''}
+          ${m.email?`<a href="mailto:${m.email}" class="member-card-email">✉️ ${m.email}</a>`:''}
+        </div>
+        ${tagRowHtml(m)}
+        ${reviewLinkHtml(m.googleReview, true)}
+        ${socialLinksHtml(m)}
+        ${completionHtml(m)}
+        ${claimBtnHtml(m)}
+      </div>
+      <div>
+        <span class="seat-badge" style="font-size:12px">${m.seat}</span>
+        ${isAdmin ? `<div style="margin-top:6px">${renewalBadge(m.renewal)} ${daysLeftBadge(m.renewal)}</div>` : ''}
+      </div>
+      <div style="text-align:right">
+        ${isAdmin?`<button class="action-btn" onclick="openModal(${m.id})">✏️ Edit</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ── VISITORS ──────────────────────────────────────────────────
+function renderVisitors() {
+  const q = document.getElementById('visitorSearch').value.toLowerCase();
+  const sf = document.getElementById('visitorStatusFilter').value;
+  const filtered = visitors.filter(v => {
+    const matchS = sf==='All'||(sf==='Sessions Remaining'&&v.status==='Active Visitor')||(sf==='Limit Reached'&&v.status==='Limit Reached — Needs to Join')||(sf==='Joined Riverbend'&&v.status==='Joined Riverbend');
+    const matchQ = !q||(v.first+' '+v.last).toLowerCase().includes(q)||v.biz.toLowerCase().includes(q);
+    return matchS && matchQ;
+  }).sort((a,b) => b.sessions - a.sessions);
+  const limitReached = visitors.filter(v=>v.status==='Limit Reached — Needs to Join').length;
+  const joined = visitors.filter(v=>v.status==='Joined Riverbend').length;
+  document.getElementById('visitorStatsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Visitors</div><div class="stat-value">${visitors.length}</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" style="color:#059669">${visitors.filter(v=>v.status==='Active Visitor').length}</div><div class="stat-sub">sessions remaining</div></div>
+    <div class="stat-card"><div class="stat-label">Limit Reached</div><div class="stat-value" style="color:#dc2626">${limitReached}</div><div class="stat-sub">need to join</div></div>
+    <div class="stat-card"><div class="stat-label">Converted</div><div class="stat-value" style="color:var(--navy)">${joined}</div><div class="stat-sub">joined Riverbend</div></div>
+  `;
+  function sessionBadge(v) {
+    const rem = 2-v.sessions;
+    if (v.status==='Joined Riverbend') return `<span class="sessions-badge sessions-ok">✅ Joined!</span>`;
+    if (rem<=0) return `<span class="sessions-badge sessions-max">🚨 Limit Reached</span>`;
+    if (rem===1) return `<span class="sessions-badge sessions-warn">⚠️ ${rem} left</span>`;
+    return `<span class="sessions-badge sessions-ok">${rem} remaining</span>`;
+  }
+  document.getElementById('visitorBody').innerHTML = filtered.length===0
+    ? '<div class="empty">No visitors found</div>'
+    : filtered.map(v => `
+    <div class="visitor-row">
+      <div><div class="biz-name">${v.first} ${v.last}</div><div class="biz-contact">${v.biz}</div><div style="font-size:11px;color:#aaa">${v.industry}</div></div>
+      <div><div style="font-size:13px;color:var(--gray)"><a href="tel:${v.phone}" style="color:inherit;text-decoration:none">${v.phone}</a></div><div style="font-size:12px;color:var(--periwinkle)"><a href="mailto:${v.email}" style="color:inherit;text-decoration:none">${v.email}</a></div></div>
+      <div style="font-size:13px;color:var(--gray)">${fmtDate(v.firstVisit)}</div>
+      <div style="font-size:13px;color:var(--gray)">${fmtDate(v.lastVisit)}</div>
+      <div style="font-size:13px;font-weight:700">${v.sessions}/2 used</div>
+      <div>${sessionBadge(v)}</div>
+      <div class="col-actions">${isAdmin?`<button class="action-btn" onclick="openVisitorModal(${v.id})">✏️</button>`:''}</div>
+    </div>`).join('');
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────
+function loadAttendance() {
+  const date = document.getElementById('meetingDate').value;
+  if (!date) return;
+  const existing = meetings.find(m => m.date===date);
+  currentAttendance = existing ? {...existing.attendance} : {};
+  currentVisitorAttendance = existing ? {...(existing.visitorAttendance||{})} : {};
+  renderAttendanceTable();
+}
+
+function renderAttendanceTable() {
+  const memberRows = members.map(m => {
+    const s = currentAttendance[m.id]||'unmarked';
+    return `<div class="att-row">
+      <div><div class="att-name">${m.contact}</div><div class="att-biz">${m.biz}</div></div>
+      <div class="att-btns">
+        <button class="att-btn ${s==='present'?'present':''}" onclick="markAttendance('member',${m.id},'present',this)">✓ Present</button>
+        <button class="att-btn ${s==='absent'?'absent':''}" onclick="markAttendance('member',${m.id},'absent',this)">✗ Absent</button>
+      </div></div>`;
+  }).join('');
+  const activeVisitors = visitors.filter(v=>v.status==='Active Visitor'||v.status==='Limit Reached — Needs to Join');
+  const visitorRows = activeVisitors.map(v => {
+    const s = currentVisitorAttendance[v.id]||'unmarked';
+    return `<div class="att-row">
+      <div><div class="att-name">${v.first} ${v.last}</div><div class="att-biz">${v.biz} <span style="background:#fffbeb;color:#d97706;border:1px solid #fcd34d;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">VISITOR</span></div></div>
+      <div class="att-btns">
+        <button class="att-btn ${s==='present'?'present':''}" onclick="markAttendance('visitor',${v.id},'present',this)">✓ Present</button>
+        <button class="att-btn ${s==='absent'?'absent':''}" onclick="markAttendance('visitor',${v.id},'absent',this)">✗ Absent</button>
+      </div></div>`;
+  }).join('');
+  document.getElementById('attendanceTable').innerHTML = memberRows +
+    (activeVisitors.length>0 ? `<div class="att-section-divider">👤 Visitors</div>${visitorRows}` : '');
+}
+
+function markAttendance(type, id, status, btn) {
+  if (type==='visitor') currentVisitorAttendance[id]=status;
+  else currentAttendance[id]=status;
+  const row = btn.closest('.att-row');
+  row.querySelectorAll('.att-btn').forEach(b=>b.className='att-btn');
+  btn.className=`att-btn ${status==='present'?'present':'absent'}`;
+}
+
+async function saveAttendance() {
+  const date = document.getElementById('meetingDate').value;
+  if (!date) { showToast('Please select a meeting date'); return; }
+  const existing = meetings.find(m=>m.date===date);
+  const record = { date, attendance: currentAttendance, visitor_attendance: currentVisitorAttendance };
+  if (existing) {
+    await sb.from('demo_meetings').update(record).eq('id', existing.id);
+  } else {
+    await sb.from('demo_meetings').insert(record);
+  }
+  await loadAll();
+  renderPastMeetings();
+  showToast('✅ Attendance saved for ' + new Date(date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}));
+}
+
+function renderPastMeetings() {
+  const sorted = [...meetings].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('pastMeetingsWrap').innerHTML = sorted.length===0
+    ? '<div class="empty">No meetings recorded yet</div>'
+    : sorted.map((m,idx) => {
+      const present = Object.values(m.attendance).filter(v=>v==='present').length;
+      const absent = Object.values(m.attendance).filter(v=>v==='absent').length;
+      const total = Object.keys(m.attendance).length;
+      const vPresent = Object.values(m.visitorAttendance||{}).filter(v=>v==='present').length;
+      const dateStr = new Date(m.date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      const memberDetails = members.map(mem => {
+        const s = m.attendance[mem.id];
+        if (!s) return '';
+        return `<div class="att-detail-row"><span>${mem.contact} <span style="color:var(--gray);font-size:12px">${mem.biz}</span></span><span style="font-weight:700;color:${s==='present'?'#059669':'#dc2626'}">${s==='present'?'✓ Present':'✗ Absent'}</span></div>`;
+      }).join('');
+      return `<div class="past-meeting-card" onclick="toggleDetail('detail-${idx}')">
+        <div class="past-meeting-title">📅 ${dateStr}</div>
+        <div class="past-meeting-stats">
+          <span class="past-stat" style="color:#059669">✓ ${present} Present</span>
+          <span class="past-stat" style="color:#dc2626">✗ ${absent} Absent</span>
+          <span class="past-stat" style="color:var(--gray)">${total} Total</span>
+          ${vPresent>0?`<span class="past-stat" style="color:#d97706">👤 ${vPresent} Visitor(s)</span>`:''}
+          <span style="font-size:12px;color:var(--periwinkle);margin-left:auto">Tap to expand ▾</span>
+        </div>
+        <div class="past-meeting-detail" id="detail-${idx}"><div style="margin-top:8px;padding-top:8px;border-top:1.5px solid var(--border)">${memberDetails}</div></div>
+      </div>`;
+    }).join('');
+}
+
+function toggleDetail(id) { document.getElementById(id).classList.toggle('open'); }
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────
+function renderAnnouncements() {
+  document.getElementById('annCompose').style.display = isAdmin ? 'block' : 'none';
+  const feed = document.getElementById('annFeed');
+  if (announcements.length===0) { feed.innerHTML='<div class="ann-empty">No announcements yet.</div>'; return; }
+  const sorted = [...announcements].sort((a,b)=>{
+    if(a.type==='pinned'&&b.type!=='pinned') return -1;
+    if(b.type==='pinned'&&a.type!=='pinned') return 1;
+    return new Date(b.date)-new Date(a.date);
+  });
+  feed.innerHTML = sorted.map(a => {
+    const badgeClass = `ann-badge-${a.type}`;
+    const cardClass = a.type==='pinned'?'ann-card pinned':a.type==='urgent'?'ann-card urgent':'ann-card';
+    const typeLabel = a.type==='announcement'?'📢 Announcement':a.type==='reminder'?'⏰ Reminder':a.type==='urgent'?'🚨 Urgent':'📌 Pinned';
+    const dateStr = new Date(a.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    return `<div class="${cardClass}">
+      <div class="ann-card-header">
+        <div style="display:flex;align-items:center;gap:8px"><span class="ann-type-badge ${badgeClass}">${typeLabel}</span><span class="ann-author">${a.author}</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span class="ann-date">${dateStr}</span>${isAdmin?`<button class="ann-delete" onclick="deleteAnnouncement(${a.id})">🗑️</button>`:''}</div>
+      </div>
+      <div class="ann-body">${a.text}</div>
+    </div>`;
+  }).join('');
+}
+
+async function postAnnouncement() {
+  const text = document.getElementById('annText').value.trim();
+  if (!text) { showToast('Please enter an announcement'); return; }
+  const type = document.getElementById('annType').value;
+  const today = new Date().toISOString().slice(0,10);
+  await sb.from('demo_announcements').insert({ type, text, author: 'Admin', date: today });
+  document.getElementById('annText').value = '';
+  await loadAll();
+  renderAnnouncements();
+  showToast('✅ Announcement posted!');
+}
+
+async function deleteAnnouncement(id) {
+  if (!confirm('Delete this announcement?')) return;
+  await sb.from('demo_announcements').delete().eq('id', id);
+  await loadAll();
+  renderAnnouncements();
+  showToast('🗑️ Announcement deleted');
+}
+
+// ── EVENTS ────────────────────────────────────────────────────
+function renderEvents() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const approved = events.filter(e=>e.status==='approved');
+  const pending = events.filter(e=>e.status==='pending');
+  const upcoming = approved.filter(e=>new Date(e.date)>=now).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const past = approved.filter(e=>new Date(e.date)<now).sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  const badge = document.getElementById('eventsPendingBadge');
+  if (badge) badge.style.display = isAdmin&&pending.length>0 ? 'inline' : 'none';
+  const pendingSection = document.getElementById('pendingEventsSection');
+  if (pendingSection) pendingSection.style.display = isAdmin&&pending.length>0 ? 'block' : 'none';
+  const pendingFeed = document.getElementById('pendingEventsFeed');
+  if (pendingFeed) pendingFeed.innerHTML = pending.map(e=>renderEventCard(e,true)).join('');
+  const upcomingFeed = document.getElementById('upcomingEventsFeed');
+  if (upcomingFeed) upcomingFeed.innerHTML = upcoming.length===0 ? '<div class="event-empty">No upcoming events. Be the first to submit one!</div>' : upcoming.map(e=>renderEventCard(e)).join('');
+  const pastFeed = document.getElementById('pastEventsFeed');
+  if (pastFeed) pastFeed.innerHTML = past.map(e=>renderEventCard(e,false,true)).join('');
+  const pastTitle = document.getElementById('pastEventsTitle');
+  if (pastTitle) pastTitle.style.display = past.length>0 ? 'block' : 'none';
+}
+
+function renderEventCard(e, isPending=false, isPast=false) {
+  const dateStr = new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const timeStr = e.time ? new Date('1970-01-01T'+e.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`;
+  return `<div class="event-card ${isPending?'pending':''} ${isPast?'past':''}">
+    <div class="event-card-header">
+      <div class="event-card-title">${e.name}</div>
+      ${isPending?'<span class="event-pending-badge">⏳ Pending</span>':''}
+      ${isPast?'<span class="event-past-badge">Past Event</span>':''}
+    </div>
+    <div class="event-card-meta">
+      <div class="event-meta-item">📅 ${dateStr}${timeStr?' · '+timeStr:''}</div>
+      <div class="event-meta-item">📍 <a href="${mapsUrl}" target="_blank">${e.location}</a></div>
+    </div>
+    ${e.desc?`<div class="event-card-desc">${e.desc}</div>`:''}
+    <div class="event-card-footer">
+      <div class="event-posted-by">Posted by ${e.poster}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        ${e.rsvp?`<a href="${e.rsvp}" target="_blank" class="event-rsvp-btn">RSVP →</a>`:''}
+        ${isPending&&isAdmin?`<div class="event-admin-btns"><button class="event-approve-btn" onclick="approveEvent(${e.id})">✓ Approve</button><button class="event-deny-btn" onclick="denyEvent(${e.id})">✗ Deny</button></div>`:''}
+        ${!isPending&&isAdmin?`<button class="event-delete-btn" onclick="deleteEvent(${e.id})">🗑️ Delete</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function approveEvent(id) {
+  await sb.from('demo_events').update({status:'approved'}).eq('id',id);
+  await loadAll(); renderEvents();
+  showToast('✅ Event approved!');
+}
+
+async function denyEvent(id) {
+  if (!confirm('Deny and remove this submission?')) return;
+  await sb.from('demo_events').delete().eq('id',id);
+  await loadAll(); renderEvents();
+  showToast('🗑️ Event denied');
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Delete this event?')) return;
+  await sb.from('demo_events').delete().eq('id',id);
+  await loadAll(); renderEvents();
+  showToast('🗑️ Event deleted');
+}
+
+function openEventModal() { ['ev-name','ev-date','ev-time','ev-location','ev-desc','ev-rsvp','ev-poster'].forEach(id=>document.getElementById(id).value=''); document.getElementById('eventModalOverlay').classList.add('open'); }
+function closeEventModal() { document.getElementById('eventModalOverlay').classList.remove('open'); }
+
+async function saveEvent() {
+  const name=document.getElementById('ev-name').value.trim();
+  const date=document.getElementById('ev-date').value;
+  const time=document.getElementById('ev-time').value;
+  const location=document.getElementById('ev-location').value.trim();
+  const description=document.getElementById('ev-desc').value.trim();
+  const rsvp=document.getElementById('ev-rsvp').value.trim();
+  const poster=document.getElementById('ev-poster').value.trim();
+  if (!name||!date||!location||!poster) { showToast('Please fill in required fields'); return; }
+  await sb.from('demo_events').insert({ name, date, time, location, description, rsvp, poster, status: isAdmin?'approved':'pending', submitted: new Date().toISOString().slice(0,10) });
+  closeEventModal();
+  await loadAll(); renderEvents();
+  showToast(isAdmin ? '✅ Event posted!' : '✅ Event submitted — pending approval');
+}
+
+// ── BUSINESS PROFILE VIEW (click a business name) ─────────────
+function openProfileView(id) {
+  const m = members.find(x => x.id === id);
+  if (!m) return;
+  const cats = [m.categoryPrimary || m.seat, m.categorySecondary].filter(Boolean);
+  const social = socialLinksHtmlLarge(m);
+  const partners = asList(m.partnerships), refs = asList(m.referrals);
+  const topMatches = matchesFor(m).slice(0, 3);
+  logActivity('profile_view', m.id);
+  document.getElementById('profileViewBody').innerHTML = `
+    ${m.featuredImageUrl ? `<img src="${m.featuredImageUrl}" class="profile-view-featured" alt="${m.biz}">` : ''}
+    <div class="profile-view-header">
+      ${m.logoUrl ? `<img src="${m.logoUrl}" class="profile-view-logo" alt="${m.biz} logo">` : ''}
+      <div>
+        <div class="profile-view-name">${m.biz}</div>
+        ${cats.length ? `<div class="profile-view-cats">${cats.map(c=>`<span class="seat-badge">${c}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>
+    ${m.description ? `<div class="profile-view-section"><p style="font-size:14px;color:var(--dark);line-height:1.6">${m.description}</p></div>` : ''}
+    <div class="profile-view-section">
+      <div class="section-label">Contact</div>
+      ${m.contact?`<div class="profile-view-row">👤 ${m.contact}</div>`:''}
+      ${m.phone?`<div class="profile-view-row">📞 <a href="tel:${m.phone}">${m.phone}</a></div>`:''}
+      ${m.email?`<div class="profile-view-row">✉️ <a href="mailto:${m.email}">${m.email}</a></div>`:''}
+      ${m.website?`<div class="profile-view-row">🌐 <a href="${m.website}" target="_blank">${m.website}</a></div>`:''}
+      ${m.address?`<div class="profile-view-row">📍 ${m.address}</div>`:''}
+    </div>
+    ${(m.offer||m.looking) ? `<div class="profile-view-section">
+      ${m.offer?`<div class="profile-view-row"><strong>Offers:</strong> ${m.offer}</div>`:''}
+      ${m.looking?`<div class="profile-view-row"><strong>Looking for:</strong> ${m.looking}</div>`:''}
+    </div>` : ''}
+    ${(partners.length || refs.length || m.networkingRole) ? `<div class="profile-view-section">
+      <div class="section-label">Networking</div>
+      ${m.networkingRole ? `<div class="profile-view-row">🤝 Networking role: <strong>${m.networkingRole}</strong></div>` : ''}
+      ${partners.length ? `<div class="tag-group" style="margin-top:6px"><span class="tag-group-label">Partners with</span>${partners.map(t=>`<span class="tag-chip tag-partner">${t}</span>`).join('')}</div>` : ''}
+      ${refs.length ? `<div class="tag-group" style="margin-top:6px"><span class="tag-group-label">Refers to</span>${refs.map(t=>`<span class="tag-chip tag-referral">${t}</span>`).join('')}</div>` : ''}
+    </div>` : ''}
+    ${topMatches.length ? `<div class="profile-view-section">
+      <div class="section-label">Suggested Connections</div>
+      ${topMatches.map(x => `<div class="profile-view-row">🔗 <span class="biz-name-link" onclick="closeProfileView();openProfileView(${x.member.id})">${x.member.biz}</span> — ${x.reasons[0]}</div>`).join('')}
+    </div>` : ''}
+    ${(social || m.googleReview) ? `<div class="profile-view-section">
+      <div class="section-label">Connect</div>
+      ${social}
+      ${reviewLinkHtml(m.googleReview)}
+    </div>` : ''}
+    <div class="profile-view-section">${completionHtml(m)}</div>
+    <button class="claim-btn" style="width:100%;justify-content:center;margin-top:4px" onclick="closeProfileView();openClaimModal(${m.id})">📋 Claim or Update This Business Profile</button>
+  `;
+  document.getElementById('profileViewOverlay').classList.add('open');
+}
+
+function closeProfileView() {
+  document.getElementById('profileViewOverlay').classList.remove('open');
+}
+
+function socialLinksHtmlLarge(m) {
+  const links = [];
+  if (m.facebook) links.push(`<a href="${m.facebook}" target="_blank" title="Facebook" class="social-icon-link">${socialIconSvg('facebook', 24)}</a>`);
+  if (m.instagram) links.push(`<a href="${m.instagram}" target="_blank" title="Instagram" class="social-icon-link">${socialIconSvg('instagram', 24)}</a>`);
+  if (m.linkedin) links.push(`<a href="${m.linkedin}" target="_blank" title="LinkedIn" class="social-icon-link">${socialIconSvg('linkedin', 24)}</a>`);
+  if (m.youtube) links.push(`<a href="${m.youtube}" target="_blank" title="YouTube" class="social-icon-link">${socialIconSvg('youtube', 24)}</a>`);
+  if (m.twitter) links.push(`<a href="${m.twitter}" target="_blank" title="X (Twitter)" class="social-icon-link">${socialIconSvg('twitter', 24)}</a>`);
+  if (m.tiktok) links.push(`<a href="${m.tiktok}" target="_blank" title="TikTok" class="social-icon-link">${socialIconSvg('tiktok', 24)}</a>`);
+  if (links.length === 0) return '';
+  return `<div class="profile-view-social-row">${links.join('')}</div>`;
+}
+
+// ── CLAIM / UPDATE PROFILE ────────────────────────────────────
+function openClaimModal(id) {
+  claimingMemberId = id;
+  const m = members.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('claimBizName').textContent = m.biz;
+  document.getElementById('c-contact-person').value = m.contactPerson || '';
+  document.getElementById('c-description').value = m.description || '';
+  document.getElementById('c-category-primary').value = m.categoryPrimary || m.seat || '';
+  document.getElementById('c-category-secondary').value = m.categorySecondary || '';
+  document.getElementById('c-address').value = m.address || '';
+  document.getElementById('c-facebook').value = m.facebook || '';
+  document.getElementById('c-instagram').value = m.instagram || '';
+  document.getElementById('c-linkedin').value = m.linkedin || '';
+  document.getElementById('c-youtube').value = m.youtube || '';
+  document.getElementById('c-twitter').value = m.twitter || '';
+  document.getElementById('c-tiktok').value = m.tiktok || '';
+  document.getElementById('c-role').value = m.networkingRole || '';
+  chipState.partnerships = asList(m.partnerships).slice();
+  chipState.referrals = asList(m.referrals).slice();
+  chipRender('partnerships'); chipRender('referrals');
+  document.getElementById('chipinput-partnerships').value = '';
+  document.getElementById('chipinput-referrals').value = '';
+  document.getElementById('chipsuggest-partnerships').innerHTML = '';
+  document.getElementById('chipsuggest-referrals').innerHTML = '';
+  document.getElementById('c-google-business').value = m.googleBusinessUrl || '';
+  document.getElementById('c-google-review').value = m.googleReview || '';
+  document.getElementById('c-logo').value = m.logoUrl || '';
+  document.getElementById('c-featured-image').value = m.featuredImageUrl || '';
+  document.getElementById('c-consent').checked = !!m.consentContact;
+  document.getElementById('claimModalOverlay').classList.add('open');
+}
+
+function closeClaimModal() {
+  document.getElementById('claimModalOverlay').classList.remove('open');
+  claimingMemberId = null;
+}
+
+async function submitClaim() {
+  if (!claimingMemberId) return;
+  if (!document.getElementById('c-consent').checked) {
+    showToast('Please check the box agreeing to member contact before submitting');
+    return;
+  }
+  const submitted = {
+    contact_person: document.getElementById('c-contact-person').value.trim(),
+    description: document.getElementById('c-description').value.trim(),
+    category_primary: document.getElementById('c-category-primary').value.trim(),
+    category_secondary: document.getElementById('c-category-secondary').value.trim(),
+    address: document.getElementById('c-address').value.trim(),
+    facebook: document.getElementById('c-facebook').value.trim(),
+    instagram: document.getElementById('c-instagram').value.trim(),
+    linkedin: document.getElementById('c-linkedin').value.trim(),
+    youtube: document.getElementById('c-youtube').value.trim(),
+    twitter: document.getElementById('c-twitter').value.trim(),
+    tiktok: document.getElementById('c-tiktok').value.trim(),
+    networking_role: document.getElementById('c-role').value,
+    partnerships: chipState.partnerships.slice(),
+    referrals: chipState.referrals.slice(),
+    google_business_url: document.getElementById('c-google-business').value.trim(),
+    google_review: document.getElementById('c-google-review').value.trim(),
+    logo_url: document.getElementById('c-logo').value.trim(),
+    featured_image_url: document.getElementById('c-featured-image').value.trim(),
+    consent_contact: true,
+    consent_date: new Date().toISOString()
+  };
+  await sb.from('demo_pending_updates').insert({
+    member_id: claimingMemberId,
+    submitted,
+    status: 'pending'
+  });
+  closeClaimModal();
+  await loadAll();
+  renderPendingUpdates();
+  showToast('✅ Submitted! Riverbend will review your update shortly.');
+}
+
+// ── ADMIN: PENDING PROFILE UPDATES ────────────────────────────
+const PENDING_FIELD_LABELS = {
+  contact_person: 'Contact Person', description: 'Business Description',
+  category_primary: 'Primary Category', category_secondary: 'Secondary Category',
+  address: 'Business Address', facebook: 'Facebook', instagram: 'Instagram',
+  linkedin: 'LinkedIn', youtube: 'YouTube', twitter: 'X (Twitter)', tiktok: 'TikTok',
+  networking_role: 'Networking Role', partnerships: 'Strategic Partnerships',
+  referrals: 'Referral Opportunities', google_business_url: 'Google Business Profile',
+  google_review: 'Google Review Link', logo_url: 'Business Logo', featured_image_url: 'Featured Image'
+};
+
+const MEMBER_FIELD_MAP = {
+  contact_person: 'contactPerson', description: 'description',
+  category_primary: 'categoryPrimary', category_secondary: 'categorySecondary',
+  address: 'address', facebook: 'facebook', instagram: 'instagram',
+  linkedin: 'linkedin', youtube: 'youtube', twitter: 'twitter', tiktok: 'tiktok',
+  networking_role: 'networkingRole', partnerships: 'partnerships', referrals: 'referrals',
+  google_business_url: 'googleBusinessUrl',
+  google_review: 'googleReview', logo_url: 'logoUrl', featured_image_url: 'featuredImageUrl'
+};
+
+function renderPendingUpdates() {
+  const badge = document.getElementById('claimsPendingBadge');
+  const pending = pendingUpdates.filter(p => p.status === 'pending');
+  if (badge) badge.style.display = isAdmin && pending.length > 0 ? 'inline' : 'none';
+
+  const feed = document.getElementById('pendingUpdatesFeed');
+  if (!feed) return;
+  if (pending.length === 0) { feed.innerHTML = '<div class="pending-empty">No pending profile updates right now.</div>'; return; }
+
+  feed.innerHTML = pending.map(p => {
+    const m = members.find(x => x.id === p.memberId);
+    const bizName = m ? m.biz : '(member no longer in directory)';
+    const dateStr = p.submittedAt ? new Date(p.submittedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+    const rows = Object.keys(PENDING_FIELD_LABELS).map(key => {
+      const raw = p.submitted[key];
+      const newVal = Array.isArray(raw) ? asText(raw) : (raw||'').toString().trim();
+      if (!newVal) return '';
+      const cur = m ? m[MEMBER_FIELD_MAP[key]] : '';
+      const currentVal = Array.isArray(cur) ? asText(cur) : (cur||'').toString().trim();
+      const changed = newVal !== currentVal;
+      return `<div class="diff-row">
+        <div class="diff-cell ${changed?'changed':''}"><span class="diff-field-label">${PENDING_FIELD_LABELS[key]} (current)</span>${currentVal||'—'}</div>
+        <div class="diff-cell ${changed?'changed':''}"><span class="diff-field-label">${PENDING_FIELD_LABELS[key]} (submitted)</span>${newVal}</div>
+      </div>`;
+    }).join('');
+    return `<div class="pending-card">
+      <div class="pending-card-header">
+        <div class="pending-biz-name">${bizName}</div>
+        <div class="pending-date">Submitted ${dateStr}</div>
+      </div>
+      <div class="diff-grid">
+        <div class="diff-col-header">Current</div><div class="diff-col-header">Submitted</div>
+        ${rows}
+      </div>
+      <div class="pending-admin-btns">
+        <button class="event-approve-btn" onclick="approvePendingUpdate(${p.id})">✓ Approve</button>
+        <button class="event-deny-btn" onclick="rejectPendingUpdate(${p.id})">✗ Reject</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function approvePendingUpdate(pendingId) {
+  const p = pendingUpdates.find(x => x.id === pendingId);
+  if (!p) return;
+  const memberUpdate = {};
+  Object.keys(MEMBER_FIELD_MAP).forEach(key => {
+    const raw = p.submitted[key];
+    if (Array.isArray(raw)) { if (raw.length) memberUpdate[key] = raw.slice(); return; }
+    const val = (raw||'').toString().trim();
+    if (val) memberUpdate[key] = val;
+  });
+  if (p.submitted.consent_contact) {
+    memberUpdate.consent_contact = true;
+    memberUpdate.consent_date = p.submitted.consent_date || new Date().toISOString();
+  }
+  if (Object.keys(memberUpdate).length > 0) {
+    await sb.from('demo_members').update(memberUpdate).eq('id', p.memberId);
+  }
+  await sb.from('demo_pending_updates').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', pendingId);
+  await loadAll();
+  render(); renderPendingUpdates();
+  showToast('✅ Profile update approved and live');
+}
+
+async function rejectPendingUpdate(pendingId) {
+  if (!confirm('Reject this profile update submission?')) return;
+  await sb.from('demo_pending_updates').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', pendingId);
+  await loadAll();
+  renderPendingUpdates();
+  showToast('🗑️ Profile update rejected');
+}
+
+// ── MEMBER MODAL ──────────────────────────────────────────────
+function openModal(id) {
+  editingId = id||null;
+  document.getElementById('modalTitle').textContent = id ? 'Edit Member' : 'Add Member';
+  document.getElementById('deleteBtn').style.display = id ? 'block' : 'none';
+  if (id) {
+    const m = members.find(x=>x.id===id);
+    document.getElementById('f-biz').value=m.biz||'';
+    document.getElementById('f-contact').value=m.contact||'';
+    document.getElementById('f-seat').value=m.seat||'';
+    document.getElementById('f-phone').value=m.phone||'';
+    document.getElementById('f-email').value=m.email||'';
+    document.getElementById('f-website').value=m.website||'';
+    document.getElementById('f-google-review').value=m.googleReview||'';
+    document.getElementById('f-status').value=m.status||'Active';
+    document.getElementById('f-since').value=m.since||'';
+    document.getElementById('f-renewal').value=m.renewal||'';
+    document.getElementById('f-offer').value=m.offer||'';
+    document.getElementById('f-looking').value=m.looking||'';
+    document.getElementById('f-notes').value=m.notes||'';
+    document.getElementById('f-role').value=m.networkingRole||'';
+  } else {
+    ['f-biz','f-contact','f-seat','f-phone','f-email','f-website','f-google-review','f-since','f-renewal','f-offer','f-looking','f-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-status').value='Active';
+    document.getElementById('f-role').value='';
+  }
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); editingId=null; }
+
+async function saveMember() {
+  const data = {
+    biz:document.getElementById('f-biz').value||'Unnamed',
+    contact:document.getElementById('f-contact').value||'',
+    seat:document.getElementById('f-seat').value||'',
+    phone:document.getElementById('f-phone').value||'',
+    email:document.getElementById('f-email').value||'',
+    website:document.getElementById('f-website').value||'',
+    google_review:document.getElementById('f-google-review').value||'',
+    status:document.getElementById('f-status').value,
+    since:document.getElementById('f-since').value||null,
+    renewal:document.getElementById('f-renewal').value||null,
+    offer:document.getElementById('f-offer').value||'',
+    looking:document.getElementById('f-looking').value||'',
+    notes:document.getElementById('f-notes').value||'',
+    networking_role:document.getElementById('f-role').value||''
+  };
+  if (editingId) {
+    await sb.from('demo_members').update(data).eq('id', editingId);
+    showToast('✅ Member updated');
+  } else {
+    await sb.from('demo_members').insert(data);
+    showToast('✅ Member added');
+  }
+  closeModal();
+  await loadAll(); render(); populateVocabSelects(); renderConnections(); renderAnalytics();
+}
+
+async function deleteMember() {
+  if (!confirm('Remove this member?')) return;
+  await sb.from('demo_members').delete().eq('id', editingId);
+  closeModal();
+  await loadAll(); render(); populateVocabSelects(); renderConnections(); renderAnalytics();
+  showToast('🗑️ Member removed');
+}
+
+// ── VISITOR MODAL ─────────────────────────────────────────────
+function openVisitorModal(id) {
+  editingVisitorId=id||null;
+  document.getElementById('visitorModalTitle').textContent=id?'Edit Visitor':'Add Visitor';
+  document.getElementById('visitorDeleteBtn').style.display=id?'block':'none';
+  const today = new Date().toISOString().slice(0,10);
+  if (id) {
+    const v=visitors.find(x=>x.id===id);
+    document.getElementById('v-first').value=v.first||'';
+    document.getElementById('v-last').value=v.last||'';
+    document.getElementById('v-biz').value=v.biz||'';
+    document.getElementById('v-phone').value=v.phone||'';
+    document.getElementById('v-email').value=v.email||'';
+    document.getElementById('v-industry').value=v.industry||'';
+    document.getElementById('v-first-visit').value=v.firstVisit||'';
+    document.getElementById('v-last-visit').value=v.lastVisit||'';
+    document.getElementById('v-sessions').value=v.sessions||1;
+    document.getElementById('v-status').value=v.status||'Active Visitor';
+    document.getElementById('v-referred').value=v.referred||'';
+    document.getElementById('v-notes').value=v.notes||'';
+  } else {
+    ['v-first','v-last','v-biz','v-phone','v-email','v-industry','v-referred','v-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('v-first-visit').value=today;
+    document.getElementById('v-last-visit').value=today;
+    document.getElementById('v-sessions').value=1;
+    document.getElementById('v-status').value='Active Visitor';
+  }
+  document.getElementById('visitorOverlay').classList.add('open');
+}
+
+function closeVisitorModal() { document.getElementById('visitorOverlay').classList.remove('open'); editingVisitorId=null; }
+
+async function saveVisitor() {
+  const data = {
+    first:document.getElementById('v-first').value||'',
+    last:document.getElementById('v-last').value||'',
+    biz:document.getElementById('v-biz').value||'',
+    phone:document.getElementById('v-phone').value||'',
+    email:document.getElementById('v-email').value||'',
+    industry:document.getElementById('v-industry').value||'',
+    first_visit:document.getElementById('v-first-visit').value||'',
+    last_visit:document.getElementById('v-last-visit').value||'',
+    sessions:parseInt(document.getElementById('v-sessions').value),
+    status:document.getElementById('v-status').value,
+    referred:document.getElementById('v-referred').value||'',
+    notes:document.getElementById('v-notes').value||''
+  };
+  if (editingVisitorId) {
+    await sb.from('demo_visitors').update(data).eq('id', editingVisitorId);
+    showToast('✅ Visitor updated');
+  } else {
+    await sb.from('demo_visitors').insert(data);
+    showToast('✅ Visitor added');
+  }
+  closeVisitorModal();
+  await loadAll(); renderVisitors();
+}
+
+async function deleteVisitor() {
+  if (!confirm('Remove this visitor?')) return;
+  await sb.from('demo_visitors').delete().eq('id', editingVisitorId);
+  closeVisitorModal();
+  await loadAll(); renderVisitors();
+  showToast('🗑️ Visitor removed');
+}
+
+// ── EXPORT & COPY EMAILS ──────────────────────────────────────
+function exportCSV() {
+  const cols=['biz','contact','seat','phone','email','website','googleReview','status','since','renewal','offer','looking','notes'];
+  const headers=['Business','Contact','Category','Phone','Email','Website','Google Review Link','Status','Member Since','Renewal Date','What They Offer','Looking For','Notes'];
+  const rows=members.map(m=>cols.map(k=>`"${(m[k]||'').replace(/"/g,'""')}"`).join(','));
+  const blob=new Blob([headers.join(',')+'\n'+rows.join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='demo_members.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyEmails() {
+  const emails = members.filter(m=>m.status==='Active'&&m.email).map(m=>m.email).join(', ');
+  navigator.clipboard.writeText(emails).then(()=>showToast('✅ '+members.filter(m=>m.status==='Active'&&m.email).length+' email addresses copied!')).catch(()=>{
+    const el=document.createElement('textarea');el.value=emails;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);
+    showToast('✅ Emails copied!');
+  });
+}
+
+// ── CHECK-IN ──────────────────────────────────────────────────
+// Device-level lock: one check-in per phone per day, surviving reloads and
+// repeat QR scans. Checked-in cards are locked, not toggleable.
+const CHECKIN_LOCK_KEY = 'vibe_demo_checkin_lock';
+
+function checkinLockedFor(dateStr) {
+  try { return localStorage.getItem(CHECKIN_LOCK_KEY) === dateStr; } catch (e) { return false; }
+}
+function setCheckinLock(dateStr) {
+  try { localStorage.setItem(CHECKIN_LOCK_KEY, dateStr); } catch (e) {}
+}
+
+async function initCheckin() {
+  const today = new Date();
+  document.getElementById('checkinDateDisplay').textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const dateStr = today.toISOString().slice(0,10);
+  const existing = meetings.find(m=>m.date===dateStr);
+  const todayAttendance = existing ? {...existing.attendance} : {};
+  const sorted = [...members].filter(m=>m.status==='Active').sort((a,b)=>a.contact.localeCompare(b.contact));
+  document.getElementById('checkinGrid').innerHTML = sorted.map(m => `
+    <div class="checkin-card ${todayAttendance[m.id]==='present'?'checked-in':''}" id="ci-${m.id}" onclick="checkInMember(${m.id},'${m.contact.replace(/'/g,"\\'")}','${m.biz.replace(/'/g,"\\'")}')">
+      <div><div class="checkin-name">${m.contact}</div><div class="checkin-biz">${m.biz}</div></div>
+      <div class="checkin-status" id="ci-status-${m.id}">${todayAttendance[m.id]==='present'?'✓':''}</div>
+    </div>`).join('');
+}
+
+async function checkInMember(id, name, biz) {
+  const card = document.getElementById('ci-'+id);
+  const statusEl = document.getElementById('ci-status-'+id);
+  const dateStrToday = new Date().toISOString().slice(0,10);
+
+  // Already checked in — confirm, never undo.
+  if (card.classList.contains('checked-in')) {
+    showToast('✅ ' + name + ' is already checked in for today.');
+    return;
+  }
+
+  // One check-in per device per day, even after a reload or a fresh QR scan.
+  if (checkinLockedFor(dateStrToday)) {
+    showToast('⚠️ This device has already checked someone in today. Please have each person scan the QR code on their own phone.');
+    return;
+  }
+
+  card.classList.add('checked-in');
+  statusEl.textContent='✓';
+  setCheckinLock(dateStrToday);
+  const dateStr = dateStrToday;
+  const existing = meetings.find(m=>m.date===dateStr);
+  if (existing) {
+    const updated = {...existing.attendance, [id]:'present'};
+    await sb.from('demo_meetings').update({attendance:updated}).eq('id',existing.id);
+  } else {
+    await sb.from('demo_meetings').insert({date:dateStr,attendance:{[id]:'present'},visitor_attendance:{}});
+  }
+  await loadAll();
+  document.getElementById('confirmName').textContent=name;
+  document.getElementById('confirmBiz').textContent=biz;
+  document.getElementById('checkinConfirm').classList.add('show');
+}
+
+function dismissConfirm() { document.getElementById('checkinConfirm').classList.remove('show'); }
+
+// ── NETWORKING TAGS & ROLE ────────────────────────────────────
+function asList(v) {
+  if (Array.isArray(v)) return v.filter(x => (x || '').toString().trim() !== '');
+  if (typeof v === 'string' && v.trim()) return v.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function asText(v) { return asList(v).join(', '); }
+
+function roleBadgeHtml(m) {
+  if (!m.networkingRole) return '';
+  return `<span class="role-badge">${m.networkingRole}</span>`;
+}
+
+function tagRowHtml(m) {
+  const p = asList(m.partnerships), r = asList(m.referrals);
+  if (!p.length && !r.length) return '';
+  const chip = (t, cls) => `<span class="tag-chip ${cls}">${t}</span>`;
+  return `<div class="tag-row">
+    ${p.length ? `<div class="tag-group"><span class="tag-group-label">Partners with</span>${p.slice(0, 4).map(t => chip(t, 'tag-partner')).join('')}${p.length > 4 ? `<span class="tag-more">+${p.length - 4}</span>` : ''}</div>` : ''}
+    ${r.length ? `<div class="tag-group"><span class="tag-group-label">Refers to</span>${r.slice(0, 4).map(t => chip(t, 'tag-referral')).join('')}${r.length > 4 ? `<span class="tag-more">+${r.length - 4}</span>` : ''}</div>` : ''}
+  </div>`;
+}
+
+// ── CHIP SELECTOR (claim form) ────────────────────────────────
+const chipState = { partnerships: [], referrals: [] };
+
+function chipRender(which) {
+  const list = document.getElementById('chiplist-' + which);
+  if (!list) return;
+  list.innerHTML = chipState[which].map(t =>
+    `<span class="chip-selected">${t}<button type="button" class="chip-x" onclick="chipRemove('${which}','${t.replace(/'/g, "\\'")}')">✕</button></span>`
+  ).join('') || `<span class="chip-empty">None selected yet</span>`;
+}
+
+function chipAdd(which, value) {
+  const v = (value || '').trim();
+  if (!v) return;
+  if (!chipState[which].some(t => t.toLowerCase() === v.toLowerCase())) chipState[which].push(v);
+  document.getElementById('chipinput-' + which).value = '';
+  document.getElementById('chipsuggest-' + which).innerHTML = '';
+  chipRender(which);
+}
+
+function chipRemove(which, value) {
+  chipState[which] = chipState[which].filter(t => t !== value);
+  chipRender(which);
+}
+
+function chipSuggest(which) {
+  const input = document.getElementById('chipinput-' + which);
+  const box = document.getElementById('chipsuggest-' + which);
+  const q = input.value.trim().toLowerCase();
+  if (!q) { box.innerHTML = ''; return; }
+  const matches = TAG_VOCABULARY
+    .filter(t => t.toLowerCase().includes(q) && !chipState[which].some(s => s.toLowerCase() === t.toLowerCase()))
+    .slice(0, 6);
+  const rows = matches.map(t => `<div class="chip-suggest-item" onclick="chipAdd('${which}','${t.replace(/'/g, "\\'")}')">${t}</div>`);
+  const exact = TAG_VOCABULARY.some(t => t.toLowerCase() === q);
+  if (!exact) rows.push(`<div class="chip-suggest-item chip-suggest-new" onclick="chipAdd('${which}', document.getElementById('chipinput-${which}').value)">➕ Add “${input.value.trim()}”</div>`);
+  box.innerHTML = rows.join('');
+}
+
+function chipKey(e, which) {
+  if (e.key === 'Enter') { e.preventDefault(); chipAdd(which, e.target.value); }
+  if (e.key === 'Backspace' && !e.target.value && chipState[which].length) {
+    chipRemove(which, chipState[which][chipState[which].length - 1]);
+  }
+}
+
+// ── CONNECTIONS: MEMBER-TO-MEMBER MATCHING ────────────────────
+function memberCats(m) { return [m.categoryPrimary || m.seat, m.categorySecondary].filter(Boolean); }
+
+function matchesFor(member) {
+  const myCats = memberCats(member).map(c => c.toLowerCase());
+  const myPartners = asList(member.partnerships).map(t => t.toLowerCase());
+  const myReferrals = asList(member.referrals).map(t => t.toLowerCase());
+
+  return members
+    .filter(o => o.id !== member.id && o.status === 'Active')
+    .map(o => {
+      const theirCats = memberCats(o);
+      const theirPartners = asList(o.partnerships).map(t => t.toLowerCase());
+      const theirReferrals = asList(o.referrals).map(t => t.toLowerCase());
+      let score = 0;
+      const reasons = [];
+
+      const iWantThem = theirCats.filter(c => myPartners.includes(c.toLowerCase()));
+      const theyWantMe = memberCats(member).filter(c => theirPartners.includes(c.toLowerCase()));
+      const iReferThem = theirCats.filter(c => myReferrals.includes(c.toLowerCase()));
+      const theyReferMe = memberCats(member).filter(c => theirReferrals.includes(c.toLowerCase()));
+
+      if (iWantThem.length) { score += 3; reasons.push(`You listed <strong>${iWantThem[0]}</strong> as a partnership you want`); }
+      if (theyWantMe.length) { score += 3; reasons.push(`${o.contact} is looking to partner with <strong>${theyWantMe[0]}</strong> businesses`); }
+      if (iReferThem.length) { score += 2; reasons.push(`You send referrals to <strong>${iReferThem[0]}</strong>`); }
+      if (theyReferMe.length) { score += 2; reasons.push(`${o.contact} sends referrals to <strong>${theyReferMe[0]}</strong>`); }
+
+      const sharedPartners = asList(member.partnerships).filter(t => theirPartners.includes(t.toLowerCase()));
+      if (sharedPartners.length) { score += 1; reasons.push(`You both work with <strong>${sharedPartners[0]}</strong> businesses`); }
+
+      const mutual = (iWantThem.length || iReferThem.length) && (theyWantMe.length || theyReferMe.length);
+      return { member: o, score, reasons, mutual };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.member.biz.localeCompare(b.member.biz));
+}
+
+function matchBadge(x) {
+  if (x.mutual) return `<span class="match-badge match-mutual">↔ Mutual fit</span>`;
+  if (x.score >= 3) return `<span class="match-badge match-strong">Strong fit</span>`;
+  return `<span class="match-badge match-possible">Worth a conversation</span>`;
+}
+
+function renderConnections() {
+  const sel = document.getElementById('connMember');
+  if (!sel) return;
+  const active = members.filter(m => m.status === 'Active').sort((a, b) => a.biz.localeCompare(b.biz));
+  const chosen = sel.value || (active[0] && active[0].id);
+  sel.innerHTML = active.map(m => `<option value="${m.id}" ${String(m.id) === String(chosen) ? 'selected' : ''}>${m.biz} — ${m.contact}</option>`).join('');
+
+  const me = members.find(m => String(m.id) === String(sel.value || chosen));
+  const feed = document.getElementById('connFeed');
+  if (!me) { feed.innerHTML = '<div class="pending-empty">Select a member to see their matches.</div>'; return; }
+
+  const list = matchesFor(me).slice(0, 8);
+  const myTags = asList(me.partnerships).length + asList(me.referrals).length;
+
+  document.getElementById('connIntro').innerHTML = myTags === 0
+    ? `<strong>${me.biz}</strong> has not added partnership or referral tags yet, so there is nothing to match on. This is exactly what the profile claim form collects.`
+    : `Based on the partnership and referral tags in <strong>${me.biz}</strong>'s profile, here is who they should be talking to at the next meeting.`;
+
+  feed.innerHTML = list.length === 0
+    ? '<div class="pending-empty">No matches yet. Add partnership or referral tags to this profile to generate introductions.</div>'
+    : list.map(x => `
+      <div class="conn-card">
+        <div class="conn-card-top">
+          <div>
+            <div class="conn-name"><span class="biz-name-link" onclick="openProfileView(${x.member.id})">${x.member.biz}</span></div>
+            <div class="conn-contact">${x.member.contact} · ${x.member.categoryPrimary || x.member.seat}</div>
+          </div>
+          ${matchBadge(x)}
+        </div>
+        <ul class="conn-why">${x.reasons.map(r => `<li>${r}</li>`).join('')}</ul>
+        <div class="conn-actions">
+          ${x.member.email ? `<a class="conn-btn" href="mailto:${x.member.email}?subject=Introduction%20from%20the%20member%20directory" onclick="logActivity('intro_request','${x.member.id}')">✉️ Request an introduction</a>` : ''}
+          <button class="conn-btn conn-btn-ghost" onclick="openProfileView(${x.member.id})">View profile</button>
+        </div>
+      </div>`).join('');
+}
+
+// ── PLATFORM ANALYTICS ────────────────────────────────────────
+function monthLabels(n) {
+  const out = [];
+  const d = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+    out.push(m.toLocaleDateString('en-US', { month: 'short' }));
+  }
+  return out;
+}
+
+function kpiCard(label, series, current, suffix, sub) {
+  const labels = monthLabels(series.length);
+  const max = Math.max(...series, current, 1);
+  const prev = series[series.length - 2] || 0;
+  const delta = prev ? Math.round(((current - prev) / prev) * 100) : 0;
+  const arrow = delta > 0 ? `<span class="kpi-trend up">▲ ${delta}%</span>`
+    : delta < 0 ? `<span class="kpi-trend down">▼ ${Math.abs(delta)}%</span>`
+    : `<span class="kpi-trend flat">— flat</span>`;
+  const bars = series.map((v, i) => {
+    const val = i === series.length - 1 ? current : v;
+    const h = Math.max(6, Math.round((val / max) * 46));
+    return `<div class="kpi-bar-wrap"><div class="kpi-bar ${i === series.length - 1 ? 'now' : ''}" style="height:${h}px" title="${labels[i]}: ${val}${suffix || ''}"></div><span>${labels[i]}</span></div>`;
+  }).join('');
+  return `<div class="kpi-card">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value">${current}${suffix || ''} ${arrow}</div>
+    <div class="kpi-bars">${bars}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
+function renderAnalytics() {
+  const wrap = document.getElementById('kpiGrid');
+  if (!wrap || !DEMO_DB) return;
+  const a = DEMO_DB.analytics;
+
+  const activeMembers = members.filter(m => m.status === 'Active').length;
+  const avgCompletion = members.length
+    ? Math.round(members.reduce((s, m) => s + profileCompletion(m).pct, 0) / members.length) : 0;
+  const views = a.profile_views[a.profile_views.length - 1] + activityCount('profile_view');
+  const clicks = a.outbound_clicks[a.outbound_clicks.length - 1] + activityCount('outbound_click');
+  const eventEng = a.event_engagement[a.event_engagement.length - 1] + activityCount('event_rsvp');
+  const intros = a.referral_intros[a.referral_intros.length - 1] + activityCount('intro_request');
+
+  wrap.innerHTML =
+    kpiCard('Monthly Active Members', a.active_members, Math.min(activeMembers, a.active_members[a.active_members.length - 1] + 1), '', 'Unique members opening the directory this month') +
+    kpiCard('Profile Completion Rate', [41, 48, 55, 61, 68, avgCompletion], avgCompletion, '%', 'Average across every business profile') +
+    kpiCard('Profile Views', a.profile_views, views, '', 'Business profiles opened by other members') +
+    kpiCard('Website & Review Clicks', a.outbound_clicks, clicks, '', 'Traffic the directory sends to member businesses') +
+    kpiCard('Event Engagement', a.event_engagement, eventEng, '', 'RSVP taps and event card opens') +
+    kpiCard('Referral Introductions', a.referral_intros, intros, '', 'Introductions requested from the Connections tab');
+
+  const incomplete = members.filter(m => profileCompletion(m).pct < 60);
+  document.getElementById('analyticsNotes').innerHTML = `
+    <div class="analytics-note">
+      <strong>${incomplete.length} of ${members.length} profiles are under 60% complete.</strong>
+      Those businesses are the ones missing out on referrals — this list is the outreach list for the next member email.
+      ${incomplete.length ? `<div style="margin-top:8px">${incomplete.map(m => `<span class="tag-chip tag-neutral">${m.biz} · ${profileCompletion(m).pct}%</span>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+// ── VOCABULARY SELECTS ────────────────────────────────────────
+function populateVocabSelects() {
+  const roleOpts = '<option value="">— Select —</option>' + NETWORKING_ROLES.map(r=>`<option>${r}</option>`).join('');
+  ['c-role','f-role'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = roleOpts; });
+
+  const cats = [...new Set(members.flatMap(m => memberCats(m)))].sort();
+  const catSel = document.getElementById('categoryFilter');
+  if (catSel) {
+    const keep = catSel.value;
+    catSel.innerHTML = '<option value="All">All Categories</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+    catSel.value = cats.includes(keep) ? keep : 'All';
+  }
+  const roleSel = document.getElementById('roleFilter');
+  if (roleSel) {
+    const keep = roleSel.value;
+    roleSel.innerHTML = '<option value="All">All Networking Roles</option>' + NETWORKING_ROLES.map(r=>`<option>${r}</option>`).join('');
+    roleSel.value = keep && keep !== 'All' ? keep : 'All';
+  }
+}
+
+// ── OUTBOUND CLICK TRACKING (feeds the analytics tab) ─────────
+document.addEventListener('click', e => {
+  const rsvp = e.target.closest('.event-rsvp-btn');
+  if (rsvp) { logActivity('event_rsvp', rsvp.textContent.trim()); return; }
+  const link = e.target.closest('a[target="_blank"]');
+  if (link) logActivity('outbound_click', link.getAttribute('href') || '');
+});
+
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeModal();});
+document.getElementById('visitorOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('visitorOverlay'))closeVisitorModal();});
+document.getElementById('eventModalOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('eventModalOverlay'))closeEventModal();});
+document.getElementById('claimModalOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('claimModalOverlay'))closeClaimModal();});
+document.getElementById('profileViewOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('profileViewOverlay'))closeProfileView();});
+</script>
+</body>
+</html>

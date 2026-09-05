@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VIBE Member Engagement Demo — by CORE AI</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -25,7 +26,10 @@
     /* GATE */
     .gate { display: block; min-height: 100vh; background: #000; }
     .gate-hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
-    .gate-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+    .gate-hero { background:
+        radial-gradient(1200px 700px at 20% 15%, rgba(107,127,212,0.45), transparent 60%),
+        radial-gradient(900px 600px at 85% 80%, rgba(245,158,11,0.20), transparent 60%),
+        linear-gradient(160deg, #0b1436 0%, #1a2b6b 55%, #101a3f 100%); }
     .gate-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.70) 100%); z-index: 1; }
     .gate-hero-content { position: relative; z-index: 2; padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
     .gate-hero-logo { height: 56px; margin-bottom: 8px; }
@@ -430,9 +434,6 @@
 <!-- GATE -->
 <div class="gate" id="gate" style="display:none">
   <div class="gate-hero">
-    <video class="gate-video" autoplay muted loop playsinline>
-      <source src="https://videos.pexels.com/video-files/11645112/11645112-uhd_2560_1440_24fps.mp4" type="video/mp4" />
-    </video>
     <div class="gate-overlay"></div>
     <div class="gate-hero-content">
       <div class="vibe-mark">VIBE<span>BY CORE AI</span></div>

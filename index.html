@@ -24,12 +24,13 @@
     .loading-text { color: #a5b0e8; font-size: 14px; font-weight: 500; }
 
     /* GATE */
-    .gate { display: block; min-height: 100vh; background: #000; }
+    .gate { display: block; min-height: 100vh; background: #05070f; overflow-x: hidden; }
     .gate-hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
     .gate-hero { background:
-        radial-gradient(1200px 700px at 20% 15%, rgba(107,127,212,0.45), transparent 60%),
-        radial-gradient(900px 600px at 85% 80%, rgba(245,158,11,0.20), transparent 60%),
-        linear-gradient(160deg, #0b1436 0%, #1a2b6b 55%, #101a3f 100%); }
+        radial-gradient(760px 520px at 12% 8%, rgba(139,92,246,0.30), transparent 62%),
+        radial-gradient(680px 520px at 88% 22%, rgba(56,189,248,0.22), transparent 62%),
+        radial-gradient(900px 640px at 50% 118%, rgba(124,58,237,0.28), transparent 62%),
+        #05070f; }
     .gate-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.70) 100%); z-index: 1; }
     .gate-hero-content { position: relative; z-index: 2; padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
     .gate-hero-logo { height: 56px; margin-bottom: 8px; }
@@ -245,6 +246,8 @@
     .completion-bar-fill.low { background: #dc2626; }
     .completion-bar-fill.mid { background: #d97706; }
     .completion-label { font-size: 11px; font-weight: 700; color: var(--gray); }
+    .completion-done { font-size: 11px; font-weight: 700; color: #059669; }
+    .claim-btn-quiet { background: transparent; border-color: var(--border); color: var(--gray); font-weight: 600; }
     .consent-field { display: flex; align-items: flex-start; gap: 8px; background: var(--light); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 6px; }
     .consent-field input[type="checkbox"] { width: auto; margin-top: 3px; flex-shrink: 0; }
     .consent-field label { font-size: 12px; font-weight: 500; color: var(--dark); line-height: 1.5; }
@@ -393,6 +396,98 @@
     .conn-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
     .conn-btn { background: var(--navy); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; font-family: inherit; }
     .conn-btn-ghost { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+
+    /* ══════════════════════════════════════════════════════════
+       VIBE dark shell — treatment E.
+       Chrome goes dark; member businesses stay bright white so
+       they read as objects on a stage rather than rows in a list.
+       Tokens: vibe-design-system/vibe-tokens.css
+       ══════════════════════════════════════════════════════════ */
+    body { background: #05070f; color: #e2e8f0;
+      background-image:
+        radial-gradient(900px 500px at 8% 0%, rgba(139,92,246,0.16), transparent 60%),
+        radial-gradient(800px 500px at 95% 12%, rgba(56,189,248,0.10), transparent 60%);
+      background-attachment: fixed; }
+
+    .vibe-mark { font-weight: 900; letter-spacing: 0.16em; font-size: 26px; line-height: 1;
+      background: linear-gradient(95deg, #ffffff 0%, #c4b5fd 38%, #60a5fa 72%, #38bdf8 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .vibe-mark span { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.42em;
+      margin-top: 5px; -webkit-text-fill-color: #94a3b8; color: #94a3b8; }
+
+    .gate-hero-title { font-size: clamp(28px, 5.2vw, 54px); line-height: 1.08; }
+    .gate-hero-sub { font-weight: 700;
+      background: linear-gradient(95deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .gate-hero-divider { background: linear-gradient(90deg, #7c3aed, #38bdf8); }
+    .gate-hero-btn, .gate-btn { background: linear-gradient(95deg, #4f46e5, #7c3aed 55%, #0ea5e9);
+      color: #fff; box-shadow: 0 10px 30px rgba(99,102,241,0.35); }
+    .gate-hero-btn:hover, .gate-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 38px rgba(99,102,241,0.5); }
+    .gate-login { background: radial-gradient(700px 500px at 50% 0%, rgba(124,58,237,0.20), transparent 65%), #05070f; }
+    .gate-box { background: rgba(15,18,42,0.92); border: 1px solid rgba(139,92,246,0.32);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset; }
+    .gate-input:focus { border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(139,92,246,0.18); }
+    .gate-codes code { color: #c4b5fd; }
+
+    /* ── chrome ─────────────────────────────────────────────── */
+    .header { background: rgba(10,13,32,0.88); border-bottom: 1px solid rgba(139,92,246,0.22); }
+    .tabs { background: rgba(10,13,32,0.72); border-bottom: 1px solid rgba(139,92,246,0.18); }
+    .tab { color: #8b95b8; }
+    .tab:hover { color: #cbd5e1; }
+    .tab.active { color: #fff; border-bottom-color: #a78bfa; }
+    .footer { background: #05070f; border-top: 1px solid rgba(139,92,246,0.18); }
+
+    .stat-card { background: rgba(15,18,42,0.78); border: 1px solid rgba(139,92,246,0.22); }
+    .stat-label { color: #94a3b8; }
+    .stat-value { color: #fff; }
+    .stat-sub { color: #64748b; }
+
+    .filter-input, .filter-select { background: rgba(255,255,255,0.05); color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.12); }
+    .filter-input::placeholder { color: #64748b; }
+    .sort-label { color: #94a3b8; }
+    .sort-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; }
+    .sort-btn.active { background: linear-gradient(95deg, #4f46e5, #7c3aed 55%, #0ea5e9); border-color: transparent; color: #fff; }
+    .events-section-title { color: #c4b5fd; border-bottom-color: rgba(139,92,246,0.22); }
+    .empty, .ann-empty, .event-empty, .pending-empty { color: #64748b; }
+    .conn-picker { background: rgba(15,18,42,0.78); border-color: rgba(139,92,246,0.22); }
+    .conn-picker label { color: #94a3b8; }
+    .conn-picker select { background: rgba(255,255,255,0.05); color: #e2e8f0; border-color: rgba(255,255,255,0.12); }
+    .conn-intro { color: #cbd5e1; }
+    .visibility-banner, .coming-soon-banner { background: linear-gradient(95deg, #1d4ed8, #7c3aed 55%, #a855f7); }
+
+    /* ── member cards: white objects on the dark field ──────── */
+    .member-card-mobile { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 14px; background: transparent; border: none; border-radius: 0; overflow: visible; max-width: 1200px; }
+    .member-card-item { display: block; background: var(--white); border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px; padding: 16px 18px; box-shadow: 0 12px 34px rgba(0,0,0,0.42);
+      transition: transform .15s, box-shadow .15s; }
+    .member-card-item:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(0,0,0,0.55); }
+    @media (max-width: 700px) { .member-card-item { padding: 16px 18px; } }
+
+    .mc-head { display: flex; gap: 12px; align-items: center; }
+    .mc-logo { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; object-fit: cover;
+      display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; }
+    .member-card-name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--dark); }
+    .member-card-contact { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .mc-desc { font-size: 12.5px; color: #4b5563; line-height: 1.5; margin-top: 10px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .mc-empty-note { font-size: 12.5px; color: #b6bcca; font-style: italic; margin-top: 10px; }
+    .mc-foot { margin-top: 12px; padding-top: 11px; border-top: 1px solid #f1f2f7;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .mc-contact { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; font-size: 11.5px; }
+    .mc-contact a { color: var(--gray); text-decoration: none; }
+    .mc-contact a:hover { color: var(--periwinkle); }
+    .mc-social { display: inline-flex; }
+    .mc-social div { margin-top: 0 !important; }
+    .mc-social svg { width: 15px; height: 15px; }
+    .mc-social .social-icon-link { width: 22px; height: 22px; }
+    .mc-status { margin-top: 11px; }
+    .member-card-item .tag-row { margin-top: 9px; }
+    .member-card-item .completion-label,
+    .member-card-item .completion-done { font-size: 10.5px; line-height: 1.4; }
+    .member-card-item .completion-bar-bg { max-width: 100%; }
+    .member-card-item .claim-btn { margin-top: 0; font-size: 11.5px; padding: 5px 12px; }
   </style>
 </head>
 <body>
@@ -1519,7 +1614,7 @@ async function launchApp() {
   document.getElementById('app').style.display = 'block';
   await loadAll();
   applyAccessLevel();
-  document.getElementById('meetingHeader').textContent = 'Demo environment · Meets 2nd &amp; 4th Thursday, 8:00 AM';
+  document.getElementById('meetingHeader').textContent = 'Demo environment · Meets 2nd & 4th Thursday, 8:00 AM';
   if (isAdmin) {
     const renewalBtn = document.getElementById('sort-renewal');
     if (renewalBtn) renewalBtn.style.display = '';
@@ -1538,7 +1633,7 @@ function applyAccessLevel() {
     hide('exportBtn'); hide('copyEmailsBtn'); hide('addVisitorBtn'); hide('addMemberBtn');
     hide('tab-visitors'); hide('tab-attendance'); hide('saveAttBtn'); hide('sort-renewal'); hide('tab-claims'); hide('tab-analytics');
     const banner = document.createElement('div');
-    banner.style.cssText = 'background:#eef2ff;border-bottom:2px solid #6b7fd4;padding:8px 28px;text-align:center;font-size:13px;color:#1a2b6b;font-weight:600;';
+    banner.style.cssText = 'background:rgba(124,58,237,0.14);border-bottom:1px solid rgba(139,92,246,0.28);padding:8px 28px;text-align:center;font-size:13px;color:#c4b5fd;font-weight:600;';
     banner.textContent = '👥 Member View — Contact Riverbend admin to make changes';
     document.querySelector('.tabs').before(banner);
   }
@@ -1667,15 +1762,20 @@ function profileCompletion(m) {
 function completionHtml(m) {
   const { pct, missing } = profileCompletion(m);
   const barClass = pct >= 70 ? '' : pct >= 40 ? 'mid' : 'low';
-  const missingText = missing.length ? `Missing: ${missing.slice(0,3).join(', ')}${missing.length>3?'…':''}` : 'Profile complete! 🎉';
+  if (pct === 100) return `<div class="completion-wrap"><div class="completion-done">✓ Profile complete</div></div>`;
+  const label = isAdmin
+    ? `Profile Completion: ${pct}% <span style="font-weight:500;color:#999">— Missing: ${missing.slice(0,3).join(', ')}${missing.length>3?'…':''}</span>`
+    : `Profile ${pct}% complete <span style="font-weight:500;color:#999">— add ${missing.slice(0,2).join(' and ')} to get found more often</span>`;
   return `<div class="completion-wrap">
-    <div class="completion-label">Profile Completion: ${pct}% <span style="font-weight:500;color:#999">— ${missingText}</span></div>
+    <div class="completion-label">${label}</div>
     <div class="completion-bar-bg"><div class="completion-bar-fill ${barClass}" style="width:${pct}%"></div></div>
   </div>`;
 }
 
 function claimBtnHtml(m) {
-  return `<button class="claim-btn" onclick="openClaimModal(${m.id})">📋 Claim or Update This Business Profile</button>`;
+  const { pct } = profileCompletion(m);
+  if (pct === 100) return `<button class="claim-btn claim-btn-quiet" onclick="openClaimModal(${m.id})">Update</button>`;
+  return `<button class="claim-btn" onclick="openClaimModal(${m.id})">Complete this profile →</button>`;
 }
 
 // ── MEMBERS ───────────────────────────────────────────────────
@@ -1733,26 +1833,33 @@ function render() {
     ? '<div class="empty">No members found</div>'
     : filtered.map(m => `
     <div class="member-card-item">
-      <div>
-        <div class="member-card-name"><span class="biz-name-link" onclick="openProfileView(${m.id})">${m.biz}</span>${roleBadgeHtml(m)}</div>
-        <div class="member-card-contact">${m.contact}</div>
-        ${m.website?`<div class="member-card-website">${m.website}</div>`:''}
-        <div class="member-card-links" style="margin-top:8px">
-          ${m.phone?`<a href="tel:${m.phone}" class="member-card-phone">📞 ${m.phone}</a>`:''}
-          ${m.email?`<a href="mailto:${m.email}" class="member-card-email">✉️ ${m.email}</a>`:''}
+      <div class="mc-head">
+        ${logoMarkHtml(m)}
+        <div style="min-width:0">
+          <div class="member-card-name"><span class="biz-name-link" onclick="openProfileView(${m.id})">${m.biz}</span>${roleBadgeHtml(m)}</div>
+          <div class="member-card-contact">${m.contact} · ${m.categoryPrimary || m.seat}</div>
         </div>
-        ${tagRowHtml(m)}
-        ${reviewLinkHtml(m.googleReview, true)}
-        ${socialLinksHtml(m)}
-        ${completionHtml(m)}
+      </div>
+
+      ${m.description
+        ? `<div class="mc-desc">${m.description}</div>`
+        : `<div class="mc-empty-note">No description added yet.</div>`}
+
+      ${tagRowHtml(m)}
+
+      <div class="mc-contact">
+        ${m.phone?`<a href="tel:${m.phone}">${m.phone}</a>`:''}
+        ${m.email?`<a href="mailto:${m.email}">${m.email}</a>`:''}
+        <span class="mc-social">${socialLinksHtml(m)}</span>
+      </div>
+
+      <div class="mc-status">${completionHtml(m)}</div>
+      <div class="mc-foot">
         ${claimBtnHtml(m)}
-      </div>
-      <div>
-        <span class="seat-badge" style="font-size:12px">${m.seat}</span>
-        ${isAdmin ? `<div style="margin-top:6px">${renewalBadge(m.renewal)} ${daysLeftBadge(m.renewal)}</div>` : ''}
-      </div>
-      <div style="text-align:right">
-        ${isAdmin?`<button class="action-btn" onclick="openModal(${m.id})">✏️ Edit</button>`:''}
+        <div style="display:flex;gap:6px;align-items:center">
+          ${isAdmin ? `<span style="font-size:10.5px">${renewalBadge(m.renewal)}</span>` : ''}
+          ${isAdmin ? `<button class="action-btn" onclick="openModal(${m.id})">✏️</button>` : ''}
+        </div>
       </div>
     </div>`).join('');
 }
@@ -2475,6 +2582,16 @@ function asList(v) {
 }
 function asText(v) { return asList(v).join(', '); }
 
+// A business with no logo still gets a mark, so the grid keeps its rhythm.
+const MARK_COLORS = ['#1a2b6b','#0f766e','#b45309','#991b1b','#166534','#3730a3','#7e22ce','#0369a1'];
+function logoMarkHtml(m) {
+  if (m.logoUrl) return `<img class="mc-logo" src="${m.logoUrl}" alt="">`;
+  const initials = (m.biz || '?').replace(/[^A-Za-z ]/g, '').split(' ')
+    .filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+  const color = MARK_COLORS[(m.id || 0) % MARK_COLORS.length];
+  return `<div class="mc-logo" style="background:${color}">${initials}</div>`;
+}
+
 function roleBadgeHtml(m) {
   if (!m.networkingRole) return '';
   return `<span class="role-badge">${m.networkingRole}</span>`;
@@ -2485,8 +2602,8 @@ function tagRowHtml(m) {
   if (!p.length && !r.length) return '';
   const chip = (t, cls) => `<span class="tag-chip ${cls}">${t}</span>`;
   return `<div class="tag-row">
-    ${p.length ? `<div class="tag-group"><span class="tag-group-label">Partners with</span>${p.slice(0, 4).map(t => chip(t, 'tag-partner')).join('')}${p.length > 4 ? `<span class="tag-more">+${p.length - 4}</span>` : ''}</div>` : ''}
-    ${r.length ? `<div class="tag-group"><span class="tag-group-label">Refers to</span>${r.slice(0, 4).map(t => chip(t, 'tag-referral')).join('')}${r.length > 4 ? `<span class="tag-more">+${r.length - 4}</span>` : ''}</div>` : ''}
+    ${p.length ? `<div class="tag-group"><span class="tag-group-label">Partners with</span>${p.slice(0, 3).map(t => chip(t, 'tag-partner')).join('')}${p.length > 3 ? `<span class="tag-more">+${p.length - 3}</span>` : ''}</div>` : ''}
+    ${r.length ? `<div class="tag-group"><span class="tag-group-label">Refers to</span>${r.slice(0, 3).map(t => chip(t, 'tag-referral')).join('')}${r.length > 3 ? `<span class="tag-more">+${r.length - 3}</span>` : ''}</div>` : ''}
   </div>`;
 }
 

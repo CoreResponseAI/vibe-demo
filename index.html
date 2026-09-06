@@ -501,11 +501,40 @@
     .mc-social svg { width: 15px; height: 15px; }
     .mc-social .social-icon-link { width: 22px; height: 22px; }
     .mc-status { margin-top: 11px; }
+    .mc-view { font-size: 12px; font-weight: 700; color: #4f46e5; }
+    .pct-chip { font-size: 10px; font-weight: 700; color: #6b7280; background: #f3f4f6; border: 1px solid #e5e7eb;
+      border-radius: 20px; padding: 3px 9px; font-family: inherit; cursor: pointer; }
+    .pct-chip:hover { border-color: var(--periwinkle); color: var(--navy); }
+    .pct-low { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+    .pct-done { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .tag-seeking { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
     .member-card-item .tag-row { margin-top: 9px; }
     .member-card-item .completion-label,
     .member-card-item .completion-done { font-size: 10.5px; line-height: 1.4; }
     .member-card-item .completion-bar-bg { max-width: 100%; }
     .member-card-item .claim-btn { margin-top: 0; font-size: 11.5px; padding: 5px 12px; }
+    /* ── direct claim landing ─────────────────────────────── */
+    .claim-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px;
+      background:
+        radial-gradient(760px 520px at 12% 8%, rgba(139,92,246,0.30), transparent 62%),
+        radial-gradient(680px 520px at 88% 22%, rgba(56,189,248,0.22), transparent 62%),
+        radial-gradient(900px 640px at 50% 118%, rgba(124,58,237,0.28), transparent 62%),
+        #05070f; }
+    .claim-page-inner { width: 100%; max-width: 440px; text-align: center; }
+    .claim-org { font-size: 12px; font-weight: 700; letter-spacing: 0.24em; color: #a78bfa; margin: 18px 0 22px; }
+    .claim-panel { background: rgba(15,18,42,0.92); border: 1px solid rgba(139,92,246,0.32); border-radius: 20px;
+      padding: 30px 26px; box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset; }
+    .claim-biz { font-size: 20px; font-weight: 800; color: #fff; line-height: 1.25; }
+    .claim-pct { font-size: 13px; font-weight: 700; color: #fbbf24; margin-top: 12px; }
+    .claim-bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,0.10); overflow: hidden; margin-top: 8px; }
+    .claim-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(95deg, #4f46e5, #7c3aed 55%, #0ea5e9); }
+    .claim-blurb { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-top: 12px; }
+    .claim-fine { font-size: 11px; color: #64748b; line-height: 1.5; margin-top: 14px; }
+    .link-btn { border: 1px solid var(--border); background: #fff; border-radius: 20px; padding: 3px 9px;
+      font-size: 10px; font-weight: 700; color: var(--gray); cursor: pointer; font-family: inherit; }
+    .link-btn:hover { border-color: var(--periwinkle); color: var(--navy); }
+    .outreach-btn { padding: 8px 14px; border-radius: 8px; border: 1.5px solid #a5b0e8; background: transparent;
+      color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
   </style>
 </head>
 <body>
@@ -515,6 +544,36 @@
   <div class="vibe-mark">VIBE<span>BY CORE AI</span></div>
   <div class="loading-spinner"></div>
   <div class="loading-text">Loading demo directory...</div>
+</div>
+
+<!-- DIRECT CLAIM PAGE (?claim=<member id>) -->
+<div id="claimPage" style="display:none">
+  <div class="claim-page">
+    <div class="claim-page-inner">
+      <div class="vibe-mark" style="font-size:34px">VIBE<span>BY CORE AI</span></div>
+      <div class="claim-org" id="claimOrgName">Riverbend Business Alliance</div>
+
+      <div class="claim-panel" id="claimPanel">
+        <div class="claim-biz" id="claimPageBiz"></div>
+        <div class="claim-pct" id="claimPagePct"></div>
+        <div class="claim-bar"><div class="claim-bar-fill" id="claimPageBar"></div></div>
+        <p class="claim-blurb" id="claimPageMissing"></p>
+        <button class="gate-btn" style="margin-top:18px" id="claimPageBtn">Update my business profile</button>
+        <p class="claim-fine">Takes about two minutes. Your changes go to the association for approval before they appear.</p>
+      </div>
+
+      <div class="claim-panel" id="claimThanks" style="display:none">
+        <div style="font-size:44px;margin-bottom:10px">✅</div>
+        <div class="claim-biz">Thank you</div>
+        <p class="claim-blurb" style="margin-top:8px">Your update has been sent to the association for review. You'll see it on your profile once it's approved.</p>
+      </div>
+
+      <div class="claim-panel claim-missing" id="claimNotFound" style="display:none">
+        <div class="claim-biz">Link not recognised</div>
+        <p class="claim-blurb" style="margin-top:8px">This claim link doesn't match a business in the directory. Please check with the association for a new one.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- CHECK-IN PAGE -->
@@ -604,6 +663,7 @@
       </div>
       <div class="header-right">
         <button class="btn-outline" id="exportBtn" onclick="exportCSV()">⬇️ Export</button>
+        <button class="outreach-btn" id="outreachBtn" onclick="copyOutreachList()">📋 Outreach List</button>
         <button class="btn-outline" id="copyEmailsBtn" onclick="copyEmails()">📧 Copy Emails</button>
         <button class="btn-outline" id="addVisitorBtn" onclick="openVisitorModal()">+ Add Visitor</button>
         <button class="btn-gold" id="addMemberBtn" onclick="openModal()">+ Add Member</button>
@@ -921,11 +981,19 @@
       </div>
     </div>
     <div class="field">
-      <label>Referral Opportunities<span class="field-hint">Types of businesses you regularly send referrals to, or want referrals from</span></label>
+      <label>Sends Referrals To<span class="field-hint">Types of businesses you hand clients to when they need something you don't do</span></label>
       <div class="chip-box" id="chipbox-referrals">
         <div class="chip-list" id="chiplist-referrals"></div>
         <input class="chip-input" id="chipinput-referrals" placeholder="Type to search, or add your own…" oninput="chipSuggest('referrals')" onkeydown="chipKey(event,'referrals')" autocomplete="off" />
         <div class="chip-suggest" id="chipsuggest-referrals"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Looking For Introductions To<span class="field-hint">Types of businesses you want to meet — this is what the matching works from</span></label>
+      <div class="chip-box" id="chipbox-seeking">
+        <div class="chip-list" id="chiplist-seeking"></div>
+        <input class="chip-input" id="chipinput-seeking" placeholder="Type to search, or add your own…" oninput="chipSuggest('seeking')" onkeydown="chipKey(event,'seeking')" autocomplete="off" />
+        <div class="chip-suggest" id="chipsuggest-seeking"></div>
       </div>
     </div>
 
@@ -1041,6 +1109,7 @@ function buildDemoSeed() {
       networking_role: 'Connector',
       partnerships: ['Mortgage Lending', 'Title & Escrow', 'Home Inspection', 'Moving & Storage'],
       referrals: ['Roofing', 'Landscaping', 'Insurance', 'Interior Design'],
+      seeking: ['Mortgage Lending', 'Home Inspection', 'Moving & Storage'],
       facebook: 'https://facebook.com/riverbendrealty.demo',
       instagram: 'https://instagram.com/riverbendrealty.demo',
       linkedin: 'https://linkedin.com/company/riverbendrealty-demo',
@@ -1065,6 +1134,7 @@ function buildDemoSeed() {
       networking_role: 'Referral Partner',
       partnerships: ['Real Estate', 'Title & Escrow', 'Insurance', 'Accounting'],
       referrals: ['Real Estate', 'Home Inspection', 'Financial Planning'],
+      seeking: ['Real Estate', 'Accounting'],
       facebook: 'https://facebook.com/keystonemtg.demo',
       instagram: '', linkedin: 'https://linkedin.com/company/keystonemtg-demo',
       youtube: '', twitter: '', tiktok: '',
@@ -1087,6 +1157,7 @@ function buildDemoSeed() {
       networking_role: 'Service Provider',
       partnerships: ['Real Estate', 'Mortgage Lending', 'Roofing'],
       referrals: ['Roofing', 'HVAC', 'Construction'],
+      seeking: ['Real Estate', 'Property Management'],
       facebook: '', instagram: 'https://instagram.com/truelineinspect.demo',
       linkedin: 'https://linkedin.com/company/trueline-demo', youtube: '', twitter: '', tiktok: '',
       google_business_url: '', address: '',
@@ -1106,6 +1177,7 @@ function buildDemoSeed() {
       networking_role: 'Service Provider',
       partnerships: ['Real Estate', 'Mortgage Lending', 'Business Law'],
       referrals: ['Real Estate', 'Commercial Real Estate'],
+      seeking: ['Real Estate', 'Mortgage Lending', 'Business Law'],
       facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/coppercreek-demo',
       youtube: '', twitter: '', tiktok: '',
       google_business_url: 'https://example.com/gbp/copper-creek-title',
@@ -1124,7 +1196,7 @@ function buildDemoSeed() {
       contact_person: '', description: '',
       category_primary: 'Moving & Storage', category_secondary: '',
       networking_role: 'New Member',
-      partnerships: ['Real Estate'], referrals: [],
+      partnerships: ['Real Estate'], referrals: [], seeking: ['Real Estate', 'Property Management'],
       facebook: 'https://facebook.com/handledmoving.demo',
       instagram: '', linkedin: '', youtube: '', twitter: '', tiktok: '',
       google_business_url: '', address: '',
@@ -1145,6 +1217,7 @@ function buildDemoSeed() {
       networking_role: 'Referral Partner',
       partnerships: ['Insurance', 'Home Inspection', 'Real Estate', 'Property Management'],
       referrals: ['Solar', 'Landscaping', 'HVAC'],
+      seeking: ['Insurance', 'Property Management', 'Real Estate'],
       facebook: 'https://facebook.com/northgateroof.demo',
       instagram: 'https://instagram.com/northgateroof.demo',
       linkedin: '', youtube: 'https://youtube.com/@northgateroof.demo', twitter: '', tiktok: '',
@@ -1167,6 +1240,7 @@ function buildDemoSeed() {
       networking_role: 'Service Provider',
       partnerships: ['Real Estate', 'Property Management', 'Commercial Real Estate'],
       referrals: ['Construction', 'Interior Design', 'Roofing'],
+      seeking: ['Real Estate', 'Property Management'],
       facebook: '', instagram: 'https://instagram.com/blueheronland.demo',
       linkedin: '', youtube: '', twitter: '', tiktok: 'https://tiktok.com/@blueheronland.demo',
       google_business_url: '', address: '9 Towpath Lane, Riverbend',
@@ -1187,6 +1261,7 @@ function buildDemoSeed() {
       networking_role: 'Referral Partner',
       partnerships: ['Roofing', 'Real Estate', 'Construction'],
       referrals: ['Roofing', 'HVAC', 'Financial Planning'],
+      seeking: ['Roofing', 'Real Estate'],
       facebook: '', instagram: 'https://instagram.com/sunlitsolar.demo',
       linkedin: 'https://linkedin.com/company/sunlitsolar-demo', youtube: '', twitter: '', tiktok: '',
       google_business_url: 'https://example.com/gbp/sunlit-solar', address: '',
@@ -1207,6 +1282,7 @@ function buildDemoSeed() {
       networking_role: 'Mentor',
       partnerships: ['Business Law', 'Financial Planning', 'Payroll & HR', 'Insurance'],
       referrals: ['Construction', 'Roofing', 'Landscaping', 'Marketing'],
+      seeking: ['Construction', 'Landscaping', 'Roofing'],
       facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/meridiantax-demo',
       youtube: '', twitter: '', tiktok: '',
       google_business_url: 'https://example.com/gbp/meridian-tax',
@@ -1227,6 +1303,7 @@ function buildDemoSeed() {
       networking_role: 'Board Member',
       partnerships: ['Accounting', 'Commercial Real Estate', 'Title & Escrow', 'Insurance'],
       referrals: ['Accounting', 'Payroll & HR', 'IT & Managed Services'],
+      seeking: ['Commercial Real Estate', 'Accounting'],
       facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/fairweatherlaw-demo',
       youtube: '', twitter: '', tiktok: '',
       google_business_url: '', address: '212 Mill Street, Suite 3, Riverbend',
@@ -1247,6 +1324,7 @@ function buildDemoSeed() {
       networking_role: 'Service Provider',
       partnerships: ['Business Law', 'Accounting', 'Marketing'],
       referrals: ['Web Development', 'Marketing', 'Payroll & HR'],
+      seeking: ['Business Law', 'Accounting', 'Marketing'],
       facebook: '', instagram: '', linkedin: 'https://linkedin.com/company/cobaltit-demo',
       youtube: '', twitter: 'https://x.com/cobaltit', tiktok: '',
       google_business_url: '', address: '',
@@ -1267,6 +1345,7 @@ function buildDemoSeed() {
       networking_role: 'Connector',
       partnerships: ['Roofing', 'Construction', 'Real Estate', 'Accounting', 'Payroll & HR'],
       referrals: ['Roofing', 'Home Inspection', 'Business Law'],
+      seeking: ['Roofing', 'Construction', 'Payroll & HR'],
       facebook: 'https://facebook.com/anchorinsure.demo',
       instagram: '', linkedin: 'https://linkedin.com/company/anchorinsure-demo',
       youtube: '', twitter: '', tiktok: '',
@@ -1289,6 +1368,7 @@ function buildDemoSeed() {
       networking_role: 'Ambassador',
       partnerships: ['Web Development', 'Photography', 'IT & Managed Services'],
       referrals: ['Roofing', 'Landscaping', 'Fitness & Wellness', 'Food & Beverage', 'Real Estate'],
+      seeking: ['Web Development', 'Photography'],
       facebook: 'https://facebook.com/brightfox.demo',
       instagram: 'https://instagram.com/brightfox.demo',
       linkedin: 'https://linkedin.com/company/brightfox-demo',
@@ -1313,6 +1393,7 @@ function buildDemoSeed() {
       networking_role: 'Ambassador',
       partnerships: ['Food & Beverage', 'Photography', 'Nonprofit', 'Marketing'],
       referrals: ['Food & Beverage', 'Photography', 'Graphic Design'],
+      seeking: ['Photography', 'Food & Beverage', 'Marketing'],
       facebook: '', instagram: 'https://instagram.com/willowandvine.demo',
       linkedin: '', youtube: '', twitter: '', tiktok: 'https://tiktok.com/@willowandvine.demo',
       google_business_url: '', address: '',
@@ -1330,7 +1411,7 @@ function buildDemoSeed() {
       contact_person: 'Jules Amari', description: '',
       category_primary: 'Food & Beverage', category_secondary: '',
       networking_role: 'Connector',
-      partnerships: ['Event Planning', 'Nonprofit'], referrals: ['Marketing'],
+      partnerships: ['Event Planning', 'Nonprofit'], referrals: ['Marketing'], seeking: ['Marketing', 'Event Planning'],
       facebook: '', instagram: 'https://instagram.com/secondstreetcoffee.demo',
       linkedin: '', youtube: '', twitter: '', tiktok: '',
       google_business_url: '', address: '14 Second Street, Riverbend',
@@ -1346,7 +1427,7 @@ function buildDemoSeed() {
       notes: 'Lapsed member — shows the Inactive filter and expired badge.',
       contact_person: 'Erin Salas', description: '',
       category_primary: 'Fitness & Wellness', category_secondary: '',
-      networking_role: '', partnerships: [], referrals: [],
+      networking_role: '', partnerships: [], referrals: [], seeking: [],
       facebook: '', instagram: 'https://instagram.com/pinewoodwellness.demo',
       linkedin: '', youtube: '', twitter: '', tiktok: '',
       google_business_url: '', address: '', logo_url: '', featured_image_url: '',
@@ -1395,6 +1476,7 @@ function buildDemoSeed() {
         networking_role: 'Referral Partner',
         partnerships: ['Real Estate', 'Property Management', 'Title & Escrow'],
         referrals: ['Real Estate', 'Interior Design', 'Landscaping'],
+        seeking: ['Real Estate', 'Property Management'],
         address: '43 Depot Road, Riverbend',
         facebook: 'https://facebook.com/handledmoving.demo',
         instagram: 'https://instagram.com/handledmoving.demo',
@@ -1415,6 +1497,7 @@ function buildDemoSeed() {
         networking_role: 'Connector',
         partnerships: ['Event Planning', 'Nonprofit', 'Marketing'],
         referrals: ['Marketing', 'Photography', 'Graphic Design'],
+        seeking: ['Marketing', 'Photography'],
         address: '14 Second Street, Riverbend',
         facebook: 'https://facebook.com/secondstreetcoffee.demo',
         instagram: 'https://instagram.com/secondstreetcoffee.demo',
@@ -1587,7 +1670,7 @@ async function loadAll() {
     logoUrl: r.logo_url||'', featuredImageUrl: r.featured_image_url||'',
     twitter: r.twitter||'', tiktok: r.tiktok||'',
     networkingRole: r.networking_role||'',
-    partnerships: r.partnerships||[], referrals: r.referrals||[],
+    partnerships: r.partnerships||[], referrals: r.referrals||[], seeking: r.seeking||[],
     consentContact: r.consent_contact||false, consentDate: r.consent_date||''
   }));
   pendingUpdates = (pu.data || []).map(r => ({
@@ -1620,8 +1703,35 @@ async function loadAll() {
 
 // ── INIT ──────────────────────────────────────────────────────
 const isCheckin = window.location.search.includes('checkin');
+const claimParam = new URLSearchParams(window.location.search).get('claim');
+
+// A claim link skips the gate entirely — that is the whole point of it.
+// Submissions still land in the approval queue, so nothing goes live unreviewed.
+async function initClaimPage() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('claimPage').style.display = 'block';
+  await loadAll();
+
+  const m = members.find(x => String(x.id) === String(claimParam));
+  if (!m) {
+    document.getElementById('claimPanel').style.display = 'none';
+    document.getElementById('claimNotFound').style.display = 'block';
+    return;
+  }
+
+  const { pct, missing } = profileCompletion(m);
+  document.getElementById('claimPageBiz').textContent = m.biz;
+  document.getElementById('claimPagePct').textContent = pct === 100
+    ? '✓ Your profile is complete' : `Your profile is ${pct}% complete`;
+  document.getElementById('claimPageBar').style.width = pct + '%';
+  document.getElementById('claimPageMissing').textContent = missing.length
+    ? 'Still missing: ' + missing.slice(0, 4).join(', ') + (missing.length > 4 ? '…' : '')
+    : 'Everything is filled in. You can still update anything that has changed.';
+  document.getElementById('claimPageBtn').onclick = () => openClaimModal(m.id);
+}
 
 window.addEventListener('load', async () => {
+  if (claimParam) { await initClaimPage(); return; }
   if (isCheckin) {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('checkinPage').style.display = 'block';
@@ -1668,7 +1778,7 @@ async function launchApp() {
 function applyAccessLevel() {
   const hide = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; };
   if (!isAdmin) {
-    hide('exportBtn'); hide('copyEmailsBtn'); hide('addVisitorBtn'); hide('addMemberBtn');
+    hide('exportBtn'); hide('outreachBtn'); hide('copyEmailsBtn'); hide('addVisitorBtn'); hide('addMemberBtn');
     hide('tab-visitors'); hide('tab-attendance'); hide('saveAttBtn'); hide('sort-renewal'); hide('tab-claims'); hide('tab-analytics');
     const banner = document.createElement('div');
     banner.style.cssText = 'background:rgba(124,58,237,0.14);border-bottom:1px solid rgba(139,92,246,0.28);padding:8px 28px;text-align:center;font-size:13px;color:#c4b5fd;font-weight:600;';
@@ -1787,7 +1897,8 @@ const COMPLETION_FIELDS = [
   { key: 'address', label: 'Business Address' },
   { key: 'networkingRole', label: 'Networking Role' },
   { key: 'partnerships', label: 'Strategic Partnerships' },
-  { key: 'referrals', label: 'Referral Opportunities' }
+  { key: 'referrals', label: 'Referral Opportunities' },
+  { key: 'seeking', label: 'Who You Want to Meet' }
 ];
 
 function profileCompletion(m) {
@@ -1808,6 +1919,13 @@ function completionHtml(m) {
     <div class="completion-label">${label}</div>
     <div class="completion-bar-bg"><div class="completion-bar-fill ${barClass}" style="width:${pct}%"></div></div>
   </div>`;
+}
+
+// Always a way in to edit: a prompt when incomplete, a quiet Update when done.
+function completionChipHtml(m) {
+  const { pct } = profileCompletion(m);
+  if (pct === 100) return `<button class="pct-chip pct-done" onclick="openClaimModal(${m.id})">✓ Complete · Update</button>`;
+  return `<button class="pct-chip ${pct < 70 ? 'pct-low' : ''}" onclick="openClaimModal(${m.id})">${pct}% complete · Finish</button>`;
 }
 
 function claimBtnHtml(m) {
@@ -1870,7 +1988,7 @@ function render() {
   document.getElementById('mobileCards').innerHTML = filtered.length === 0
     ? '<div class="empty">No members found</div>'
     : filtered.map(m => `
-    <div class="member-card-item">
+    <div class="member-card-item" onclick="openProfileView(${m.id})">
       <div class="mc-head">
         ${logoMarkHtml(m)}
         <div style="min-width:0">
@@ -1885,18 +2003,13 @@ function render() {
 
       ${tagRowHtml(m)}
 
-      <div class="mc-contact">
-        ${m.phone?`<a href="tel:${m.phone}">${m.phone}</a>`:''}
-        ${m.email?`<a href="mailto:${m.email}">${m.email}</a>`:''}
-        <span class="mc-social">${socialLinksHtml(m)}</span>
-      </div>
-
-      <div class="mc-status">${completionHtml(m)}</div>
       <div class="mc-foot">
-        ${claimBtnHtml(m)}
-        <div style="display:flex;gap:6px;align-items:center">
+        <span class="mc-view">View profile →</span>
+        <div style="display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
           ${isAdmin ? `<span style="font-size:10.5px">${renewalBadge(m.renewal)}</span>` : ''}
           ${isAdmin ? `<button class="action-btn" onclick="openModal(${m.id})">✏️</button>` : ''}
+          ${isAdmin ? `<button class="link-btn" onclick="copyClaimLink(${m.id})" title="Copy this member's claim link">🔗 Link</button>` : ''}
+          ${completionChipHtml(m)}
         </div>
       </div>
     </div>`).join('');
@@ -2165,7 +2278,7 @@ function openProfileView(id) {
   if (!m) return;
   const cats = [m.categoryPrimary || m.seat, m.categorySecondary].filter(Boolean);
   const social = socialLinksHtmlLarge(m);
-  const partners = asList(m.partnerships), refs = asList(m.referrals);
+  const partners = asList(m.partnerships), refs = asList(m.referrals), needs = asList(m.seeking);
   const topMatches = matchesFor(m).slice(0, 3);
   logActivity('profile_view', m.id);
   document.getElementById('profileViewBody').innerHTML = `
@@ -2190,11 +2303,12 @@ function openProfileView(id) {
       ${m.offer?`<div class="profile-view-row"><strong>Offers:</strong> ${m.offer}</div>`:''}
       ${m.looking?`<div class="profile-view-row"><strong>Looking for:</strong> ${m.looking}</div>`:''}
     </div>` : ''}
-    ${(partners.length || refs.length || m.networkingRole) ? `<div class="profile-view-section">
+    ${(partners.length || refs.length || needs.length || m.networkingRole) ? `<div class="profile-view-section">
       <div class="section-label">Networking</div>
       ${m.networkingRole ? `<div class="profile-view-row">🤝 Networking role: <strong>${m.networkingRole}</strong></div>` : ''}
       ${partners.length ? `<div class="tag-group" style="margin-top:6px"><span class="tag-group-label">Partners with</span>${partners.map(t=>`<span class="tag-chip tag-partner">${t}</span>`).join('')}</div>` : ''}
-      ${refs.length ? `<div class="tag-group" style="margin-top:6px"><span class="tag-group-label">Refers to</span>${refs.map(t=>`<span class="tag-chip tag-referral">${t}</span>`).join('')}</div>` : ''}
+      ${refs.length ? `<div class="tag-group" style="margin-top:6px"><span class="tag-group-label">Sends referrals to</span>${refs.map(t=>`<span class="tag-chip tag-referral">${t}</span>`).join('')}</div>` : ''}
+      ${needs.length ? `<div class="tag-group" style="margin-top:6px"><span class="tag-group-label">Looking for</span>${needs.map(t=>`<span class="tag-chip tag-seeking">${t}</span>`).join('')}</div>` : ''}
     </div>` : ''}
     ${topMatches.length ? `<div class="profile-view-section">
       <div class="section-label">Suggested Connections</div>
@@ -2247,11 +2361,12 @@ function openClaimModal(id) {
   document.getElementById('c-role').value = m.networkingRole || '';
   chipState.partnerships = asList(m.partnerships).slice();
   chipState.referrals = asList(m.referrals).slice();
-  chipRender('partnerships'); chipRender('referrals');
-  document.getElementById('chipinput-partnerships').value = '';
-  document.getElementById('chipinput-referrals').value = '';
-  document.getElementById('chipsuggest-partnerships').innerHTML = '';
-  document.getElementById('chipsuggest-referrals').innerHTML = '';
+  chipState.seeking = asList(m.seeking).slice();
+  ['partnerships','referrals','seeking'].forEach(k => {
+    chipRender(k);
+    document.getElementById('chipinput-' + k).value = '';
+    document.getElementById('chipsuggest-' + k).innerHTML = '';
+  });
   document.getElementById('c-google-business').value = m.googleBusinessUrl || '';
   document.getElementById('c-google-review').value = m.googleReview || '';
   document.getElementById('c-logo').value = m.logoUrl || '';
@@ -2286,6 +2401,7 @@ async function submitClaim() {
     networking_role: document.getElementById('c-role').value,
     partnerships: chipState.partnerships.slice(),
     referrals: chipState.referrals.slice(),
+    seeking: chipState.seeking.slice(),
     google_business_url: document.getElementById('c-google-business').value.trim(),
     google_review: document.getElementById('c-google-review').value.trim(),
     logo_url: document.getElementById('c-logo').value.trim(),
@@ -2300,6 +2416,11 @@ async function submitClaim() {
   });
   closeClaimModal();
   await loadAll();
+  if (claimParam) {
+    document.getElementById('claimPanel').style.display = 'none';
+    document.getElementById('claimThanks').style.display = 'block';
+    return;
+  }
   renderPendingUpdates();
   showToast('✅ Submitted! Riverbend will review your update shortly.');
 }
@@ -2310,8 +2431,9 @@ const PENDING_FIELD_LABELS = {
   category_primary: 'Primary Category', category_secondary: 'Secondary Category',
   address: 'Business Address', facebook: 'Facebook', instagram: 'Instagram',
   linkedin: 'LinkedIn', youtube: 'YouTube', twitter: 'X (Twitter)', tiktok: 'TikTok',
-  networking_role: 'Networking Role', partnerships: 'Strategic Partnerships',
-  referrals: 'Referral Opportunities', google_business_url: 'Google Business Profile',
+  networking_role: 'Networking Role', partnerships: 'Partners With',
+  referrals: 'Sends Referrals To', seeking: 'Looking For Introductions To',
+  google_business_url: 'Google Business Profile',
   google_review: 'Google Review Link', logo_url: 'Business Logo', featured_image_url: 'Featured Image'
 };
 
@@ -2320,7 +2442,7 @@ const MEMBER_FIELD_MAP = {
   category_primary: 'categoryPrimary', category_secondary: 'categorySecondary',
   address: 'address', facebook: 'facebook', instagram: 'instagram',
   linkedin: 'linkedin', youtube: 'youtube', twitter: 'twitter', tiktok: 'tiktok',
-  networking_role: 'networkingRole', partnerships: 'partnerships', referrals: 'referrals',
+  networking_role: 'networkingRole', partnerships: 'partnerships', referrals: 'referrals', seeking: 'seeking',
   google_business_url: 'googleBusinessUrl',
   google_review: 'googleReview', logo_url: 'logoUrl', featured_image_url: 'featuredImageUrl'
 };
@@ -2531,6 +2653,37 @@ async function deleteVisitor() {
   showToast('🗑️ Visitor removed');
 }
 
+// ── CLAIM LINKS (admin outreach) ──────────────────────────────
+function claimLinkFor(id) {
+  return location.origin + location.pathname + '?claim=' + id;
+}
+
+function copyText(text, msg) {
+  navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = text; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    showToast(msg);
+  });
+}
+
+function copyClaimLink(id) {
+  const m = members.find(x => x.id === id);
+  copyText(claimLinkFor(id), '🔗 Claim link copied for ' + (m ? m.biz : 'member'));
+}
+
+// The outreach list: least-complete first, because that is the call order.
+function copyOutreachList() {
+  const rows = [...members]
+    .filter(m => m.status === 'Active')
+    .map(m => ({ m, pct: profileCompletion(m).pct }))
+    .sort((a, b) => a.pct - b.pct)
+    .map(({ m, pct }) => [m.biz, m.contact, m.email || '—', pct + '%', claimLinkFor(m.id)].join('\t'));
+  const header = ['Business', 'Contact', 'Email', 'Complete', 'Claim link'].join('\t');
+  copyText([header, ...rows].join('\n'),
+    '📋 ' + rows.length + ' rows copied — paste into a sheet or email');
+}
+
 // ── EXPORT & COPY EMAILS ──────────────────────────────────────
 function exportCSV() {
   const cols=['biz','contact','seat','phone','email','website','googleReview','status','since','renewal','offer','looking','notes'];
@@ -2639,14 +2792,14 @@ function tagRowHtml(m) {
   const p = asList(m.partnerships), r = asList(m.referrals);
   if (!p.length && !r.length) return '';
   const chip = (t, cls) => `<span class="tag-chip ${cls}">${t}</span>`;
-  return `<div class="tag-row">
-    ${p.length ? `<div class="tag-group"><span class="tag-group-label">Partners with</span>${p.slice(0, 3).map(t => chip(t, 'tag-partner')).join('')}${p.length > 3 ? `<span class="tag-more">+${p.length - 3}</span>` : ''}</div>` : ''}
-    ${r.length ? `<div class="tag-group"><span class="tag-group-label">Refers to</span>${r.slice(0, 3).map(t => chip(t, 'tag-referral')).join('')}${r.length > 3 ? `<span class="tag-more">+${r.length - 3}</span>` : ''}</div>` : ''}
-  </div>`;
+  const row = (label, list, cls) => list.length
+    ? `<div class="tag-group"><span class="tag-group-label">${label}</span>${list.slice(0, 2).map(t => chip(t, cls)).join('')}${list.length > 2 ? `<span class="tag-more">+${list.length - 2}</span>` : ''}</div>`
+    : '';
+  return `<div class="tag-row">${row('Partners with', p, 'tag-partner')}${row('Sends referrals to', r, 'tag-referral')}</div>`;
 }
 
 // ── CHIP SELECTOR (claim form) ────────────────────────────────
-const chipState = { partnerships: [], referrals: [] };
+const chipState = { partnerships: [], referrals: [], seeking: [] };
 
 function chipRender(which) {
   const list = document.getElementById('chiplist-' + which);
@@ -2713,6 +2866,14 @@ function matchesFor(member) {
       const iReferThem = theirCats.filter(c => myReferrals.includes(c.toLowerCase()));
       const theyReferMe = memberCats(member).filter(c => theirReferrals.includes(c.toLowerCase()));
 
+      // Strongest signal: one side asked for exactly what the other side gives.
+      const mySeeking = asList(member.seeking).map(t => t.toLowerCase());
+      const theirSeeking = asList(o.seeking).map(t => t.toLowerCase());
+      const iNeedThem = theirCats.filter(c => mySeeking.includes(c.toLowerCase()));
+      const theyNeedMe = memberCats(member).filter(c => theirSeeking.includes(c.toLowerCase()));
+
+      if (iNeedThem.length) { score += 5; reasons.push(`You asked for introductions to <strong>${iNeedThem[0]}</strong> businesses`); }
+      if (theyNeedMe.length) { score += 5; reasons.push(`${o.contact} asked for introductions to <strong>${theyNeedMe[0]}</strong> businesses`); }
       if (iWantThem.length) { score += 3; reasons.push(`You listed <strong>${iWantThem[0]}</strong> as a partnership you want`); }
       if (theyWantMe.length) { score += 3; reasons.push(`${o.contact} is looking to partner with <strong>${theyWantMe[0]}</strong> businesses`); }
       if (iReferThem.length) { score += 2; reasons.push(`You send referrals to <strong>${iReferThem[0]}</strong>`); }
@@ -2721,7 +2882,7 @@ function matchesFor(member) {
       const sharedPartners = asList(member.partnerships).filter(t => theirPartners.includes(t.toLowerCase()));
       if (sharedPartners.length) { score += 1; reasons.push(`You both work with <strong>${sharedPartners[0]}</strong> businesses`); }
 
-      const mutual = (iWantThem.length || iReferThem.length) && (theyWantMe.length || theyReferMe.length);
+      const mutual = (iWantThem.length || iReferThem.length || iNeedThem.length) && (theyWantMe.length || theyReferMe.length || theyNeedMe.length);
       return { member: o, score, reasons, mutual };
     })
     .filter(x => x.score > 0)

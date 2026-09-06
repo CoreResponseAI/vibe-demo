@@ -973,7 +973,7 @@
       <select id="c-role"></select>
     </div>
     <div class="field">
-      <label>Strategic Partnerships<span class="field-hint">Types of businesses you want to build ongoing partnerships with</span></label>
+      <label>Partners With<span class="field-hint">Types of businesses you work alongside on the same customer</span></label>
       <div class="chip-box" id="chipbox-partnerships">
         <div class="chip-list" id="chiplist-partnerships"></div>
         <input class="chip-input" id="chipinput-partnerships" placeholder="Type to search, or add your own…" oninput="chipSuggest('partnerships')" onkeydown="chipKey(event,'partnerships')" autocomplete="off" />
@@ -1896,9 +1896,9 @@ const COMPLETION_FIELDS = [
   { key: 'logoUrl', label: 'Business Logo' },
   { key: 'address', label: 'Business Address' },
   { key: 'networkingRole', label: 'Networking Role' },
-  { key: 'partnerships', label: 'Strategic Partnerships' },
-  { key: 'referrals', label: 'Referral Opportunities' },
-  { key: 'seeking', label: 'Who You Want to Meet' }
+  { key: 'partnerships', label: 'Partners With' },
+  { key: 'referrals', label: 'Sends Referrals To' },
+  { key: 'seeking', label: 'Looking For Introductions To' }
 ];
 
 function profileCompletion(m) {

@@ -414,6 +414,24 @@
       -webkit-background-clip: text; background-clip: text; color: transparent; }
     .vibe-mark span { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.42em;
       margin-top: 5px; -webkit-text-fill-color: #94a3b8; color: #94a3b8; }
+    .gate-eyebrow { display: flex; align-items: center; gap: 14px; margin-top: 26px; font-size: 12px; font-weight: 700; letter-spacing: 0.28em; color: #a78bfa; }
+    .gate-eyebrow::before, .gate-eyebrow::after { content: ''; width: clamp(28px, 8vw, 76px); height: 1px; background: linear-gradient(90deg, transparent, #7c3aed); }
+    .gate-eyebrow::after { background: linear-gradient(90deg, #7c3aed, transparent); }
+    .gate-pillars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 30px; width: 100%; max-width: 620px; }
+    .pillar-ring { width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid rgba(167,139,250,0.55); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; background: rgba(124,58,237,0.10); }
+    .pillar-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: #fff; margin-bottom: 5px; }
+    .pillar-body { font-size: 11.5px; line-height: 1.5; color: #94a3b8; }
+    .gate-tagline { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; padding: 11px 16px; text-align: center;
+      background: linear-gradient(95deg, #1d4ed8, #7c3aed 55%, #a855f7); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; }
+    @media (max-width: 560px) { .gate-pillars { gap: 10px; } .pillar-body { font-size: 10.5px; } .pillar-ring { width: 44px; height: 44px; }
+      .gate-tagline { font-size: 9.5px; letter-spacing: 0.06em; padding: 10px 10px; } }
+    .gate-hero-content { max-width: 780px; width: 100%; }
+
+    /* Same wordmark, three sizes: hero, login card, footer. */
+    .gate-hero-content .vibe-mark { font-size: clamp(40px, 8vw, 76px); }
+    .gate-hero-content .vibe-mark span { font-size: clamp(10px, 1.6vw, 13px); margin-top: 8px; }
+    .gate-box .vibe-mark { font-size: 34px; }
+    .gate-box .vibe-mark span { font-size: 9px; margin-bottom: 4px; }
 
     .gate-hero-title { font-size: clamp(28px, 5.2vw, 54px); line-height: 1.08; }
     .gate-hero-sub { font-weight: 700;
@@ -532,12 +550,32 @@
     <div class="gate-overlay"></div>
     <div class="gate-hero-content">
       <div class="vibe-mark">VIBE<span>BY CORE AI</span></div>
-      <div class="gate-hero-divider"></div>
-      <h1 class="gate-hero-title">Member Engagement, Built for Local Business Organizations</h1>
-      <p class="gate-hero-sub">Live demo · Riverbend Business Alliance (fictional)</p>
+
+      <div class="gate-eyebrow">LIVE DEMO — WELCOME TO</div>
+      <h1 class="gate-hero-title">Riverbend<br>Business Alliance</h1>
+      <p class="gate-hero-sub">Member Directory &amp; Networking Hub</p>
+
+      <div class="gate-pillars">
+        <div>
+          <div class="pillar-ring"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="pillar-title">FIND A MEMBER</div>
+          <div class="pillar-body">Every member business, one searchable directory.</div>
+        </div>
+        <div>
+          <div class="pillar-ring"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="pillar-title">SHARE A REFERRAL</div>
+          <div class="pillar-body">Know who to send business to, and why.</div>
+        </div>
+        <div>
+          <div class="pillar-ring"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-2 2a2.8 2.8 0 0 1-4-4l4-4"/><path d="M13 7l2-2a2.8 2.8 0 0 1 4 4l-4 4"/><path d="M9 12h6"/></svg></div>
+          <div class="pillar-title">MAKE CONNECTIONS</div>
+          <div class="pillar-body">Better conversations before you walk in the room.</div>
+        </div>
+      </div>
+
       <button class="gate-hero-btn" onclick="document.getElementById('loginSection').scrollIntoView({behavior:'smooth'})">Sign In →</button>
     </div>
-    <div class="gate-scroll-hint"><span>Scroll to sign in</span><span>↓</span></div>
+    <div class="gate-tagline">RIGHT PLACE. RIGHT PEOPLE. RIGHT TIME.</div>
   </div>
   <div class="gate-login" id="loginSection">
     <div class="gate-box">

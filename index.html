@@ -233,6 +233,17 @@
     .profile-view-section { margin-bottom: 14px; }
     .profile-view-section .section-label { margin: 0 0 8px; }
     .profile-view-row { font-size: 14px; color: var(--dark); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    /* Stacked, not flex — a sentence with bold inside it must stay a sentence. */
+    .suggest-list { display: block; }
+    .suggest-item { display: block; padding: 9px 11px; border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 7px; cursor: pointer; transition: border-color .15s, background .15s; }
+    .suggest-item:hover { border-color: var(--periwinkle); background: #fafbff; }
+    .suggest-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .suggest-name { font-size: 13.5px; font-weight: 700; color: var(--navy); }
+    .suggest-badge { font-size: 10px; font-weight: 800; color: #047857; background: #ecfdf5;
+      border: 1px solid #a7f3d0; border-radius: 20px; padding: 2px 8px; white-space: nowrap; }
+    .suggest-why { font-size: 12px; color: var(--gray); line-height: 1.5; margin-top: 3px; }
+    .suggest-why strong { color: var(--dark); font-weight: 700; }
     .profile-view-row a { color: var(--periwinkle); text-decoration: none; }
     .profile-view-social-row { display: flex; gap: 12px; margin-top: 6px; }
     .social-icon-link { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; text-decoration: none; }
@@ -1760,6 +1771,9 @@ function checkPassword() {
 async function launchApp() {
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  // The login panel sits a full screen below the hero, so without this
+  // the app opens wherever the person had scrolled to.
+  document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
   await loadAll();
   applyAccessLevel();
   document.getElementById('meetingHeader').textContent = 'Demo environment · Meets 2nd & 4th Thursday, 8:00 AM';
@@ -2312,7 +2326,15 @@ function openProfileView(id) {
     </div>` : ''}
     ${topMatches.length ? `<div class="profile-view-section">
       <div class="section-label">Suggested Connections</div>
-      ${topMatches.map(x => `<div class="profile-view-row">🔗 <span class="biz-name-link" onclick="closeProfileView();openProfileView(${x.member.id})">${x.member.biz}</span> — ${x.reasons[0]}</div>`).join('')}
+      <div class="suggest-list">
+        ${topMatches.map(x => `<div class="suggest-item" onclick="closeProfileView();openProfileView(${x.member.id})">
+          <div class="suggest-top">
+            <span class="suggest-name">${x.member.biz}</span>
+            ${x.mutual ? '<span class="suggest-badge">↔ Mutual</span>' : ''}
+          </div>
+          <div class="suggest-why">${x.reasons[0]}</div>
+        </div>`).join('')}
+      </div>
     </div>` : ''}
     ${(social || m.googleReview) ? `<div class="profile-view-section">
       <div class="section-label">Connect</div>
